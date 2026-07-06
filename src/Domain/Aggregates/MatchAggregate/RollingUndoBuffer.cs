@@ -1,28 +1,32 @@
 namespace Domain.Aggregates.MatchAggregate;
 
 /// <summary>
-/// A memory-bounded ring buffer ensuring lookbacks never exceed the 6-ball undo limit.
+/// A clean, standard List-backed rolling buffer bounded strictly to 6 elements.
 /// </summary>
 public sealed class RollingUndoBuffer
 {
-    private readonly LinkedList<BallEvent> _history = new();
+    private readonly List<BallEvent> _history = new(MaxUndoCapacity);
     private const int MaxUndoCapacity = 6;
 
     public void Push(BallEvent ball)
     {
         if (_history.Count >= MaxUndoCapacity)
         {
-            _history.RemoveFirst(); // Evict oldest ball from heap to protect the 512MB RAM ceiling
+            _history.RemoveAt(0); // Evict the oldest ball; shifts indexes 1-5 left by 1 position
         }
-        _history.AddLast(ball);
+        _history.Add(ball); // Append the fresh ball entry to the end of the list
     }
 
     public BallEvent? Pop()
     {
         if (_history.Count == 0) return null;
-        var lastNode = _history.Last!;
-        _history.RemoveLast();
-        return lastNode.Value;
+
+        // In a List, the latest ball is natively at the very last index, which perfectly matches an Undo LIFO requirement!
+        int lastIndex = _history.Count - 1;
+        var lastBall = _history[lastIndex];
+        
+        _history.RemoveAt(lastIndex); // Extremely fast O(1) removal since no elements follow it
+        return lastBall;
     }
 
     public int Count => _history.Count;
