@@ -2,22 +2,16 @@ namespace Domain.Aggregates.MatchAggregate;
 
 /// <summary>
 /// Represents an immutable transactional entry for a single ball delivered.
+/// Readonly struct guarantees stack allocation and zero GC heap pressure.
 /// </summary>
-public sealed record BallEvent(
+public readonly record struct BallEvent(
     Guid Id, 
-    int Runs, 
-    bool IsWicket, 
+    int TotalRunsAdded,     // The absolute total runs added to the team score (e.g., 4 for a wide + 3 runs)
+    int BatsmanRun,         // The exact number of times the batters physically crossed ends
     ExtraType Extra,
-    string Description, 
-    DateTime Timestamp);
-
-public enum ExtraType
-{
-    None = 0,       // Standard legal delivery (Dot ball, runs scored off bat)
-    Wide = 1,       // Extra, does NOT count as a legal ball
-    NoBall = 2,     // Extra, does NOT count as a legal ball
-    Bye = 3,        // Extra, DOES count as a legal ball
-    LegBye = 4,     // Extra, DOES count as a legal ball
-    Penalty = 5,    // Strategic penalty runs, does NOT count as a legal ball
-    DeadBall = 6    // Nullified delivery, does NOT count as a legal ball, zero stats impact
-}
+    bool IsWicket,
+    WicketType WicketKind,
+    string DismissedPlayerId,
+    string FielderId,
+    DateTime Timestamp
+);
