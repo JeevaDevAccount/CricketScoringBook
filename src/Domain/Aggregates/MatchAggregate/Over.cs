@@ -6,6 +6,8 @@ public sealed class Over
 
     public int OverNumber { get; private set; }
 
+    public bool IsLocked { get; private set; }
+
     private readonly List<Delivery> _deliveries = new();
 
     public IReadOnlyCollection<Delivery> Deliveries => _deliveries.AsReadOnly();
