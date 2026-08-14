@@ -1,4 +1,4 @@
-using Domain.Aggregates;
+using Domain.Enum;
 
 namespace Domain.Aggregates.MatchAggregate;
 
@@ -25,7 +25,7 @@ public sealed class MatchState
     public string ActiveBowlerId { get; private set; } = string.Empty;
 
     // --- Fixed 6-Ball Structural Buffer ---
-    private readonly BallEvent[] _undoBuffer = new BallEvent[6];
+    private readonly List _undoBuffer = new List[6];
     private int _bufferHead = -1;
     private int _historyCount = 0;
 
@@ -100,7 +100,7 @@ public sealed class MatchState
         _historyCount = 0;
     }
 
-    public void RecordBall(in BallEvent ball, string scorerId)
+    public void RecordBall(List ball, string scorerId)
     {
         if (!IsScorerValid(scorerId))
             throw new UnauthorizedAccessException();

@@ -1,3 +1,5 @@
+using Domain.Enum;
+
 namespace Domain.Aggregates.MatchAggregate;
 
 public sealed class Match
