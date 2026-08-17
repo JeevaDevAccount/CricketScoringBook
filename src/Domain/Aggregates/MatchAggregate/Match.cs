@@ -20,12 +20,15 @@ public sealed class Match
     public Guid? TeamBattingFirstId { get; private set; }
     public Guid? TeamBattingSecondId { get; private set; }
 
+    public int CurrentSuperOverNumber { get; private set; }
+
     private readonly List<Innings> _innings = new();
     public IReadOnlyCollection<Innings> Innings => _innings.AsReadOnly();
 
     private Innings CurrentInnings => _innings[^1];
+
     public Guid? WinnerTeamId { get; private set; }
-    public bool IsTie { get; private set; }
+    public MatchResultType? Result { get; private set; }
 
     private Match(){}
 
@@ -44,10 +47,11 @@ public sealed class Match
 
         Id = Guid.NewGuid();
         Status = MatchStatus.Scheduled;
-
+        CurrentSuperOverNumber = 0;
         Team1Id = team1Id;
         Team2Id = team2Id;
         MaxOvers = maxOvers;
+        Timestamp = DateTime.UtcNow;
     }
 
     public static Match Create(Guid team1Id, Guid team2Id, int maxOvers){
@@ -142,31 +146,125 @@ public sealed class Match
         if (strikerId == nonStrikerId)
             throw new ArgumentException("Striker and non-striker cannot be the same.");
 
-        Innings innings = Innings.Create(1,TeamBattingFirstId.Value,TeamBattingSecondId.Value,
-            InningsType.Regular,MaxOvers,targetRuns,strikerId,nonStrikerId,bowlerId);
-            
-        _innings.Add(innings);
+        if (_innings.Type == InningsType.Regular)
+        {
+            StartRegularInnings(strikerId,nonStrikerId,bowlerId);
+            return;
+        }
+
+        StartSuperOverInnings(strikerId,nonStrikerId,bowlerId);
     }
 
-    public void StartSecondInnings(int strikerId, int nonStrikerId, int bowlerId)
+    private void StartRegularInnings(int strikerId,int nonStrikerId,int bowlerId)
     {
-        if (Status != MatchStatus.InningsBreak)
-            throw new InvalidOperationException("Second innings can only start during the innings break.");
+        if (Status != MatchStatus.Live && Status != MatchStatus.InningsBreak)
+        {
+            throw new InvalidOperationException("Regular innings cannot be started in the current match state.");
+        }
 
-        if (_innings.Count != 1)
-            throw new InvalidOperationException("First innings must be completed before starting the second innings.");
+        if (_innings.Count >= 2)
+            throw new InvalidOperationException("Both regular innings have already been created.");
 
         if (!TeamBattingFirstId.HasValue || !TeamBattingSecondId.HasValue)
         {
-            throw new InvalidOperationException("Toss must be completed before starting the second innings.");
+            throw new InvalidOperationException(
+                "Toss must be completed before starting innings.");
         }
 
-        int targetRuns = _innings[0].TotalRuns + 1;
+        int inningsNumber = _innings.Count + 1;
 
-        Innings innings = Innings.Create(2,TeamBattingSecondId.Value,TeamBattingFirstId.Value,
-            InningsType.Regular,MaxOvers,targetRuns, strikerId,nonStrikerId,bowlerId);
-        
+        Guid battingTeamId;
+        Guid bowlingTeamId;
+        int? targetRuns = null;
+
+        if (inningsNumber == 1)
+        {
+            battingTeamId = TeamBattingFirstId.Value;
+            bowlingTeamId = TeamBattingSecondId.Value;
+        }
+        else
+        {
+            battingTeamId = TeamBattingSecondId.Value;
+            bowlingTeamId = TeamBattingFirstId.Value;
+
+            targetRuns = _innings[0].TotalRuns + 1;
+        }
+
+        var innings = Innings.Create(
+            inningsNumber: inningsNumber,
+            type: InningsType.Regular,
+            superOverNumber: null,
+            battingTeamId: battingTeamId,
+            bowlingTeamId: bowlingTeamId,
+            maxOvers: MaxOvers,
+            targetRuns: targetRuns,
+            currentStrikerId: strikerId,
+            currentNonStrikerId: nonStrikerId,
+            currentBowlerId: bowlerId);
+
         _innings.Add(innings);
+
+        Status = MatchStatus.Live;
+    }
+
+    private void StartSuperOverInnings(int strikerId,int nonStrikerId,int bowlerId)
+    {
+        if (Status != MatchStatus.InningsBreak)
+            throw new InvalidOperationException(
+                "Super Over innings can only start during an innings break.");
+
+        var currentSuperOverInnings = _innings
+                .Where(x =>
+                    x.Type == InningsType.SuperOver &&
+                    x.SuperOverNumber == CurrentSuperOverNumber)
+                .ToList();
+
+        if (currentSuperOverInnings.Count >= 2)
+            throw new InvalidOperationException(
+                "Both innings of the current Super Over have already been completed.");
+
+        Guid battingTeamId;
+        Guid bowlingTeamId;
+        int? targetRuns = null;
+
+        // ---------------------------------------
+        // First innings of Super Over
+        // ---------------------------------------
+
+        if (currentSuperOverInnings.Count == 0)
+        {
+            battingTeamId = TeamBattingSecondId.Value;
+            bowlingTeamId = TeamBattingFirstId.Value;
+        }
+
+        // ---------------------------------------
+        // Second innings of Super Over
+        // ---------------------------------------
+
+        else
+        {
+            var firstInnings = currentSuperOverInnings[0];
+            battingTeamId = firstInnings.BowlingTeamId;
+            bowlingTeamId = firstInnings.BattingTeamId;
+            targetRuns = firstInnings.TotalRuns + 1;
+        }
+
+        int inningsNumber = currentSuperOverInnings.Count + 1;
+
+        var innings = Innings.Create(
+            inningsNumber: inningsNumber,
+            type: InningsType.SuperOver,
+            superOverNumber: CurrentSuperOverNumber,
+            battingTeamId: battingTeamId,
+            bowlingTeamId: bowlingTeamId,
+            maxOvers: 1,
+            targetRuns: targetRuns,
+            currentStrikerId: strikerId,
+            currentNonStrikerId: nonStrikerId,
+            currentBowlerId: bowlerId);
+
+        _innings.Add(innings);
+
         Status = MatchStatus.Live;
     }
 
@@ -200,34 +298,91 @@ public sealed class Match
 
     private void HandleInningsCompleted()
     {
+        if (CurrentInnings.Type == InningsType.Regular)
+        {
+            HandleRegularInningsCompleted();
+            return;
+        }
+
+        HandleSuperOverInningsCompleted();
+    }
+
+    private void HandleInningsCompleted(){
         if (_innings.Count == 1)
         {
             Status = MatchStatus.InningsBreak;
             return;
         }
 
-        DetermineResult();
+        var firstInnings = _innings[0]
+        var secondInnings = _innings[1]
 
-        Status = MatchStatus.Completed;
-    }
-
-    private void DetermineResult()
-    {
-        Innings firstInnings = _innings[0];
-        Innings secondInnings = _innings[1];
-
-        if (secondInnings.TotalRuns > firstInnings.TotalRuns)
-        {
+        if (secondInnings.TotalRuns > firstInnings.TotalRuns){
             WinnerTeamId = secondInnings.BattingTeamId;
+            Result = MatchResultType.Won;
+            Status = MatchStatus.completed;
             return;
         }
 
-        if (firstInnings.TotalRuns > secondInnings.TotalRuns)
-        {
+        if (secondInnings.TotalRuns < firstInnings.TotalRuns){
             WinnerTeamId = firstInnings.BattingTeamId;
+            Result = MatchResultType.Won;
+            Status = MatchStatus.Completed;
+            return;
+        }
+        StartSuperOverPhase();
+    }
+
+    private void StartSuperOverPhase()
+    {
+        CurrentSuperOverNumber = 1;
+        Status = MatchStatus.InningsBreak;
+    }
+
+    private void HandleSuperOverInningsCompleted()
+    {
+        var currentSuperOverInnings =
+            _innings
+                .Where(x =>
+                    x.Type == InningsType.SuperOver &&
+                    x.SuperOverNumber == CurrentSuperOverNumber)
+                .ToList();
+
+        // First innings completed
+        if (currentSuperOverInnings.Count == 1)
+        {
+            Status = MatchStatus.InningsBreak;
             return;
         }
 
-        IsTie = true;
+        // Second innings completed
+        if (currentSuperOverInnings.Count != 2)
+        {
+            throw new InvalidOperationException("Invalid Super Over state.");
+        }
+
+        var first = currentSuperOverInnings[0];
+        var second = currentSuperOverInnings[1];
+
+        if (second.TotalRuns > first.TotalRuns)
+        {
+            WinnerTeamId = second.BattingTeamId;
+            Result = MatchResultType.Won;
+            Status = MatchStatus.Completed;
+            return;
+        }
+
+        if (second.TotalRuns < first.TotalRuns)
+        {
+            WinnerTeamId = first.BattingTeamId;
+            Result = MatchResultType.Won;
+            Status = MatchStatus.Completed;
+            return;
+        }
+        
+        // Super Over tied
+        CurrentSuperOverNumber++;
+        Status = MatchStatus.InningsBreak;;
     }
+
 }
