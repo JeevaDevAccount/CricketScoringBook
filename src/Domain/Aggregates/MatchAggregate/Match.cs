@@ -58,9 +58,9 @@ public sealed class Match
         return new Match(team1Id,team2Id,maxOvers)
     }
 
-    public void ClaimScorer(string scorerId){
-        if (string.IsNullOrWhiteSpace(scorerId))
-            throw new ArgumentException("Scorer is required.",nameof(scorerId));
+    public void ClaimScorer(int scorerId){
+        if (scorerId <= 0)
+            throw new ArgumentException("Invalid scorer Id.",nameof(scorerId));
 
         if (ActiveScorerId is not null)
             throw new InvalidOperationException("A scorer is already active for this match.");
@@ -68,10 +68,10 @@ public sealed class Match
         ActiveScorerId = scorerId;
     }
 
-    public void ChangeScorer(string activeScorerId, string newScorerId){
-        if (string.IsNullOrWhiteSpace(newScorerId))
-            throw new ArgumentException("Scorer is required.",nameof(scorerId));
-
+    public void ChangeScorer(int newScorerId){
+        if (newScorerId <= 0)
+            throw new ArgumentException("Invalid new scorer Id.",nameof(newScorerId));
+        
         if (ActiveScorerId != activeScorerId)
             throw new InvalidOperationException("Only the active scorer can assign the new scorer");
         
