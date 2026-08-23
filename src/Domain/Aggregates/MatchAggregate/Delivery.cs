@@ -5,33 +5,20 @@ namespace Domain.Aggregates.MatchAggregate;
 public sealed class Delivery
 {
     public Guid Id { get; private set; }
-
     public int SequenceNumber { get; private set; }
-
     public int BallNumberInOver { get; private set; }
-
     public int StrikerId { get; private set; }
-
     public int NonStrikerId { get; private set; }
-
     public int BowlerId { get; private set; }
-
     public int BatterRuns { get; private set; }
-
     public int TotalRuns { get; private set; }
-
     public ExtraType ExtraType { get; private set; }
-
-    public WicketType WicketType { get; private set; }
-
+    public Dismissal Dismissal { get; private set; }
     public int? DismissedPlayerId { get; private set; }
-
-    public int? FielderId { get; private set; }
-
     public DateTime Timestamp { get; private set; }
 
     public bool IsWicket =>
-        WicketType != WicketType.None;
+        Dismissal.WicketType != WicketType.None;
 
     public bool IsLegal =>
         ExtraType != ExtraType.Wide &&
@@ -50,9 +37,9 @@ public sealed class Delivery
         int batterRuns,
         int totalRuns,
         ExtraType extraType,
-        WicketType wicketType,
-        int? dismissedPlayerId,
-        int? fielderId)
+        Dismissal dismissal,
+        int? dismissedPlayerId
+        )
     {
         if (sequenceNumber <= 0)
             throw new ArgumentException(
@@ -98,7 +85,7 @@ public sealed class Delivery
                 "Total runs cannot be less than batter runs.",
                 nameof(totalRuns));
 
-        if (wicketType == WicketType.None &&
+        if (dismissal.wicketType == WicketType.None &&
             dismissedPlayerId.HasValue)
         {
             throw new ArgumentException(
@@ -106,7 +93,7 @@ public sealed class Delivery
                 nameof(dismissedPlayerId));
         }
 
-        if (wicketType != WicketType.None &&
+        if (dismissal.wicketType != WicketType.None &&
             !dismissedPlayerId.HasValue)
         {
             throw new ArgumentException(
@@ -127,11 +114,9 @@ public sealed class Delivery
         TotalRuns = totalRuns;
 
         ExtraType = extraType;
+        Dismissal = dismissal;
 
-        WicketType = wicketType;
         DismissedPlayerId = dismissedPlayerId;
-        FielderId = fielderId;
-
         Timestamp = DateTime.UtcNow;
     }
 
@@ -144,9 +129,9 @@ public sealed class Delivery
         int batterRuns,
         int totalRuns,
         ExtraType extraType = ExtraType.None,
-        WicketType wicketType = WicketType.None,
-        int? dismissedPlayerId = null,
-        int? fielderId = null)
+        Dismissal dismissal,
+        int? dismissedPlayerId = null
+        )
     {
         return new Delivery(
             sequenceNumber,
@@ -157,8 +142,8 @@ public sealed class Delivery
             batterRuns,
             totalRuns,
             extraType,
-            wicketType,
-            dismissedPlayerId,
-            fielderId);
+            dismissal,
+            dismissedPlayerId
+        );
     }
 }

@@ -3,11 +3,8 @@ namespace Domain.Aggregates.MatchAggregate;
 public sealed class PlayingTeam
 {
     private const int MaximumPlayers = 11;
-
     private readonly List<int> _playerIds = [];
-
     public int TeamId { get; }
-
     public IReadOnlyList<int> Players => _playerIds.AsReadOnly();
 
     private PlayingTeam()

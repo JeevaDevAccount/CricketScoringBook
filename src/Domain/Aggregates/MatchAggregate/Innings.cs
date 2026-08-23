@@ -95,21 +95,22 @@ public sealed class Innings
 		);
     }
     
-	public void RecordDelivery(Delivery delivery)
+	public void RecordDelivery(Match.DeliveryInput input)
 	{
-		if (delivery is null) 
-			throw new ArgumentNullException(nameof(delivery));
+		if (input is null) 
+			throw new ArgumentNullException(nameof(input));
 		
 		if (IsCompleted)
 			throw new InvalidOperationException("The innings has already been completed.");
 			
-		ValidateDelivery(delivery);
-		CurrentOver.AddDelivery(delivery);
+		ValidateDelivery(input);
+
+		Delivery delivery = CurrentOver.AddDelivery(input);
 		
 		BattingScore battingScore = GetOrCreateBattingScore(delivery.StrikerId); 
 		BowlingScore bowlingScore = GetOrCreateBowlingScore(delivery.BowlerId);
 				
-		battingScore.RecordDelivery( delivery.BatterRuns, delivery.IsLegal, delivery.Dismissal); 
+		battingScore.RecordDelivery(delivery.BatterRuns, delivery.IsLegal, delivery.Dismissal); 
 		
 		bool creditedWithWicket = IsWicketCreditedToBowler(delivery);
 		int bowlerRunsConceded = delivery.BatterRuns + BowlerExtraRuns(delivery);
@@ -256,17 +257,17 @@ public sealed class Innings
 		}
 	}
 		
-	private void ValidateDelivery(Delivery delivery) 
+	private void ValidateDelivery(Match.DeliveryInput input) 
 	{ 
-		if (delivery.StrikerId != CurrentStrikerId) { 
+		if (input.StrikerId != CurrentStrikerId) { 
 			throw new InvalidOperationException( "Delivery striker does not match the current striker."); 
 		} 
 		
-		if (delivery.NonStrikerId != CurrentNonStrikerId) { 
+		if (input.NonStrikerId != CurrentNonStrikerId) { 
 			throw new InvalidOperationException( "Delivery non-striker does not match the current non-striker."); 
 		} 
 		
-		if (delivery.BowlerId != CurrentBowlerId) { 
+		if (input.BowlerId != CurrentBowlerId) { 
 			throw new InvalidOperationException( "Delivery bowler does not match the current bowler."); 
 		}
 	}

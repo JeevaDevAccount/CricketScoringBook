@@ -7,18 +7,22 @@ public sealed class Match
 {
     public Guid Id { get; private set; }
     public MatchStatus Status { get; private set; }
-    public string? ActiveScorerId { get; private set; }
+    public int? ActiveScorerId { get; private set; }
 
     public int MaxOvers { get; private set; }
     public DateTime Timestamp {get; private set;}
 
-    public Guid Team1Id { get; private set; }
-    public Guid Team2Id { get; private set; }
+    // playing team
+    private readonly PlayingTeam _team1PlayingTeam;
+    private readonly PlayingTeam _team2PlayingTeam;
+
+    public PlayingTeam Team1PlayingTeam => _team1PlayingTeam;
+    public PlayingTeam Team2PlayingTeam => _team2PlayingTeam;
 
     // Toss
-    public Guid? TossWonTeamId { get; private set; }
-    public Guid? TeamBattingFirstId { get; private set; }
-    public Guid? TeamBattingSecondId { get; private set; }
+    public int? TossWonTeamId { get; private set; }
+    public int? TeamBattingFirstId { get; private set; }
+    public int? TeamBattingSecondId { get; private set; }
 
     public int CurrentSuperOverNumber { get; private set; }
 
@@ -48,15 +52,28 @@ public sealed class Match
         Id = Guid.NewGuid();
         Status = MatchStatus.Scheduled;
         CurrentSuperOverNumber = 0;
-        Team1Id = team1Id;
-        Team2Id = team2Id;
+        
+        _team1PlayingTeam = PlayingTeam.Create(team1Id);
+        _team2PlayingTeam = PlayingTeam.Create(team2Id);
+
         MaxOvers = maxOvers;
         Timestamp = DateTime.UtcNow;
     }
 
     public static Match Create(Guid team1Id, Guid team2Id, int maxOvers){
-        return new Match(team1Id,team2Id,maxOvers)
+        return new Match(team1Id,team2Id,maxOvers);
     }
+
+    public sealed record DeliveryInput(
+        int StrikerId,
+        int NonStrikerId,
+        int BowlerId,
+        int BatterRuns,
+        int TotalRuns,
+        ExtraType ExtraType,
+        Dismissal Dismissal,
+        int? DismissedPlayerId
+    );
 
     public void ClaimScorer(int scorerId){
         if (scorerId <= 0)
@@ -72,31 +89,28 @@ public sealed class Match
         if (newScorerId <= 0)
             throw new ArgumentException("Invalid new scorer Id.",nameof(newScorerId));
         
-        if (ActiveScorerId != activeScorerId)
-            throw new InvalidOperationException("Only the active scorer can assign the new scorer");
-        
         if (ActiveScorerId == newScorerId)
             throw new InvalidOperationException("The new scorer is already the active scorer.");
 
         ActiveScorerId = newScorerId;
     }
 
-    public void Toss(GUID tossWonTeamId, InningsDecision decision){
+    public void Toss(Guid tossWonTeamId, InningsDecision decision){
         if (tossWonTeamId != Team1Id && tossWonTeamId != Team2Id)
             throw new ArgumentException("Toss winning team does not belong to this match.",nameof(tossWonTeamId));
 
         TossWonTeamId = tossWonTeamId;
-        bool team1WonToss = tossWonTeamId == Team1Id;
+        bool team1WonToss = tossWonTeamId == Team1PlayingTeam.TeamId;
    
         if (decision == InningsDecision.Bat)
         {
             TeamBattingFirstId = tossWonTeamId;
-            TeamBattingSecondId = team1WonToss ? Team2Id : Team1Id;
+            TeamBattingSecondId = team1WonToss ? Team2PlayingTeam.TeamId : Team1PlayingTeam.TeamId;
         }
         else
         {
             TeamBattingSecondId = tossWonTeamId;
-            TeamBattingFirstId = team1WonToss ? Team2Id : Team1Id;
+            TeamBattingFirstId = team1WonToss ? Team2PlayingTeam.TeamId : Team1PlayingTeam.TeamId;
         }
     }
 
@@ -114,8 +128,7 @@ public sealed class Match
             !TeamBattingFirstId.HasValue ||
             !TeamBattingSecondId.HasValue)
         {
-            throw new InvalidOperationException(
-                "Toss must be completed before starting the match.");
+            throw new InvalidOperationException("Toss must be completed before starting the match.");
         }
 
         Status = MatchStatus.Live;
@@ -130,9 +143,6 @@ public sealed class Match
         {
             throw new InvalidOperationException("Toss must be completed before starting an innings.");
         }
-
-        if (_innings.Count > 0)
-            throw new InvalidOperationException("The first innings has already been started.");
 
         if (strikerId <= 0)
             throw new ArgumentException("Invalid striker.",nameof(strikerId));
@@ -167,8 +177,7 @@ public sealed class Match
 
         if (!TeamBattingFirstId.HasValue || !TeamBattingSecondId.HasValue)
         {
-            throw new InvalidOperationException(
-                "Toss must be completed before starting innings.");
+            throw new InvalidOperationException("Toss must be completed before starting innings.");
         }
 
         int inningsNumber = _innings.Count + 1;
@@ -200,7 +209,8 @@ public sealed class Match
             targetRuns: targetRuns,
             currentStrikerId: strikerId,
             currentNonStrikerId: nonStrikerId,
-            currentBowlerId: bowlerId);
+            currentBowlerId: bowlerId
+        );
 
         _innings.Add(innings);
 
@@ -236,20 +246,20 @@ public sealed class Match
             battingTeamId = TeamBattingSecondId.Value;
             bowlingTeamId = TeamBattingFirstId.Value;
         }
-
-        // ---------------------------------------
-        // Second innings of Super Over
-        // ---------------------------------------
-
         else
         {
+            // ---------------------------------------
+            //      Second innings of Super Over
+            // ---------------------------------------
+
             var firstInnings = currentSuperOverInnings[0];
             battingTeamId = firstInnings.BowlingTeamId;
             bowlingTeamId = firstInnings.BattingTeamId;
             targetRuns = firstInnings.TotalRuns + 1;
         }
 
-        int inningsNumber = currentSuperOverInnings.Count + 1;
+        //int inningsNumber = currentSuperOverInnings.Count + 1;
+        int inningsNumber = _innings.Count + 1;
 
         var innings = Innings.Create(
             inningsNumber: inningsNumber,
@@ -268,8 +278,8 @@ public sealed class Match
         Status = MatchStatus.Live;
     }
 
-    public void RecordDelivery(Delivery delivery){
-        if (delivery is null)
+    public void RecordDelivery(DeliveryInput Input){
+        if (Input is null)
             throw new ArgumentNullException(nameof(delivery));
 
         if (Status != MatchStatus.Live)
@@ -278,7 +288,7 @@ public sealed class Match
         if (_innings.Count == 0)
             throw new InvalidOperationException("An innings has not been started.");
 
-        CurrentInnings.RecordDelivery(delivery)
+        CurrentInnings.RecordDelivery(Input);
 
         if (CurrentInnings.IsCompleted)
         {
@@ -293,7 +303,7 @@ public sealed class Match
         if (_innings.Count == 0)
             throw new InvalidOperationException("An innings has not been started.");
 
-        CurrentInnings.UndoLastDelivery()
+        CurrentInnings.UndoLastDelivery();
     }
 
     private void HandleInningsCompleted()
@@ -307,20 +317,20 @@ public sealed class Match
         HandleSuperOverInningsCompleted();
     }
 
-    private void HandleInningsCompleted(){
+    private void HandleRegularInningsCompleted(){
         if (_innings.Count == 1)
         {
             Status = MatchStatus.InningsBreak;
             return;
         }
 
-        var firstInnings = _innings[0]
-        var secondInnings = _innings[1]
+        var firstInnings = _innings[0];
+        var secondInnings = _innings[1];
 
         if (secondInnings.TotalRuns > firstInnings.TotalRuns){
             WinnerTeamId = secondInnings.BattingTeamId;
             Result = MatchResultType.Won;
-            Status = MatchStatus.completed;
+            Status = MatchStatus.Completed;
             return;
         }
 
@@ -382,7 +392,23 @@ public sealed class Match
         
         // Super Over tied
         CurrentSuperOverNumber++;
-        Status = MatchStatus.InningsBreak;;
+        Status = MatchStatus.InningsBreak;
     }
 
+    public void AddPlayerToPlayingTeam (int teamId, int playerId){
+        
+       if (teamId == Team1Id)
+        {
+            _team1PlayingTeam.AddPlayer(playerId);
+            return;
+        }
+
+        if (teamId == Team2Id)
+        {
+            _team2PlayingTeam.AddPlayer(playerId);
+            return;
+        }
+
+        throw new InvalidOperationException("Team does not belong to this match.");
+    }
 }

@@ -127,30 +127,62 @@ public sealed class RecordDeliveryHandler
         if (match is null)
             throw new InvalidOperationException("Match not found.");
         
-        match.RecordDelivery(command.delivery);
+        var input = new Match.DeliveryInput(
+        command.StrikerId,
+        command.NonStrikerId,
+        command.BowlerId,
+        command.BatterRuns,
+        command.TotalRuns,
+        command.ExtraType,
+        command.WicketType,
+        command.DismissedPlayerId,
+        command.FielderId);
+
+        match.RecordDelivery(input);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
-}
 
-public sealed class UndoDeliveryHandler
-{
-    private readonly IMatchRepository _matchRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    public sealed class UndoDeliveryHandler
+    {
+        private readonly IMatchRepository _matchRepository;
+        private readonly IUnitOfWork _unitOfWork;
 
-    public UndoDeliveryHandler(IMatchRepository matchRepository, IUnitOfWork unitOfWork){
-        _matchRepository = matchRepository;
-        _unitOfWork = unitOfWork;
+        public UndoDeliveryHandler(IMatchRepository matchRepository, IUnitOfWork unitOfWork){
+            _matchRepository = matchRepository;
+            _unitOfWork = unitOfWork;
+        }
+
+        public async Task Handle(UndoDeliveryCommand command, CancellationToken cancellationToken){
+            var match = await _matchRepository.GetByIdAsync(command.MatchId,cancellationToken);
+            
+            if (match is null)
+                throw new InvalidOperationException("Match not found.");
+            
+            match.UndoDelivery();
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
     }
 
-    public async Task Handle(UndoDeliveryCommand command, CancellationToken cancellationToken){
-        var match = await _matchRepository.GetByIdAsync(command.MatchId,cancellationToken);
-        
-        if (match is null)
-            throw new InvalidOperationException("Match not found.");
-        
-        match.UndoDelivery();
+    public sealed class AddPlayerToPlayingTeamHandler(Guid MatchId, int TeamId, int PlayerId){
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        private readonly IMatchRepository _matchRepository;
+        private readonly IUnitOfWork _unitOfWork;
+        
+        public AddPlayerToPlayingTeamHandler(IMatchRepository matchRepository, IUnitOfWork unitOfWork){
+            _matchRepository = matchRepository;
+            _unitOfWork = unitOfWork;
+        }
+
+        public async Task Handle(AddPlayerToPlayingTeamCommand command, CancellationToken cancellationToken){
+            var match = await _matchRepository.GetByIdAsync(command.MatchId,cancellationToken);
+            
+            if (match is null)
+                throw new InvalidOperationException("Match not found.");
+            
+            match.AddPlayerToPlayingTeam(command.TeamId,command.PlayerId);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
     }
 }
