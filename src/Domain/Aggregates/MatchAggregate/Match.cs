@@ -31,16 +31,16 @@ public sealed class Match
 
     private Innings CurrentInnings => _innings[^1];
 
-    public Guid? WinnerTeamId { get; private set; }
+    public int? WinnerTeamId { get; private set; }
     public MatchResultType? Result { get; private set; }
 
     private Match(){}
 
-    private Match(Guid team1Id, Guid team2Id, int maxOvers){
-        if (team1Id == Guid.Empty)
+    private Match(int team1Id, int team2Id, int maxOvers){
+        if (team1Id <= 0 )
             throw new ArgumentException("Invalid first team.",nameof(team1Id));
 
-        if (team2Id == Guid.Empty)
+        if (team2Id <= 0 )
             throw new ArgumentException("Invalid second team.",nameof(team2Id));
 
         if (team1Id == team2Id)
@@ -49,7 +49,6 @@ public sealed class Match
         if (maxOvers <= 0)
             throw new ArgumentException("Maximum overs must be greater than zero.",nameof(maxOvers));
 
-        Id = Guid.NewGuid();
         Status = MatchStatus.Scheduled;
         CurrentSuperOverNumber = 0;
         
@@ -60,7 +59,7 @@ public sealed class Match
         Timestamp = DateTime.UtcNow;
     }
 
-    public static Match Create(Guid team1Id, Guid team2Id, int maxOvers){
+    public static Match Create(int team1Id, int team2Id, int maxOvers){
         return new Match(team1Id,team2Id,maxOvers);
     }
 
@@ -95,8 +94,8 @@ public sealed class Match
         ActiveScorerId = newScorerId;
     }
 
-    public void Toss(Guid tossWonTeamId, InningsDecision decision){
-        if (tossWonTeamId != Team1Id && tossWonTeamId != Team2Id)
+    public void Toss(int tossWonTeamId, InningsDecision decision){
+        if (tossWonTeamId != Team1PlayingTeam.TeamId && tossWonTeamId != Team2PlayingTeam.TeamId)
             throw new ArgumentException("Toss winning team does not belong to this match.",nameof(tossWonTeamId));
 
         TossWonTeamId = tossWonTeamId;
@@ -120,7 +119,7 @@ public sealed class Match
             throw new InvalidOperationException(
                 "Only a scheduled match can be started.");
 
-        if (string.IsNullOrWhiteSpace(ActiveScorerId))
+        if (!ActiveScorerId.HasValue)
             throw new InvalidOperationException(
                 "A scorer must be assigned before starting the match.");
 
@@ -156,7 +155,7 @@ public sealed class Match
         if (strikerId == nonStrikerId)
             throw new ArgumentException("Striker and non-striker cannot be the same.");
 
-        if (_innings.Type == InningsType.Regular)
+        if (CurrentSuperOverNumber == 0)
         {
             StartRegularInnings(strikerId,nonStrikerId,bowlerId);
             return;
@@ -182,8 +181,8 @@ public sealed class Match
 
         int inningsNumber = _innings.Count + 1;
 
-        Guid battingTeamId;
-        Guid bowlingTeamId;
+        int  battingTeamId;
+        int  bowlingTeamId;
         int? targetRuns = null;
 
         if (inningsNumber == 1)
@@ -233,8 +232,8 @@ public sealed class Match
             throw new InvalidOperationException(
                 "Both innings of the current Super Over have already been completed.");
 
-        Guid battingTeamId;
-        Guid bowlingTeamId;
+        int battingTeamId;
+        int bowlingTeamId;
         int? targetRuns = null;
 
         // ---------------------------------------
@@ -280,7 +279,7 @@ public sealed class Match
 
     public void RecordDelivery(DeliveryInput Input){
         if (Input is null)
-            throw new ArgumentNullException(nameof(delivery));
+            throw new ArgumentNullException(nameof(Input));
 
         if (Status != MatchStatus.Live)
             throw new InvalidOperationException("Delivery can only be recorded when the match is live.");
@@ -397,13 +396,13 @@ public sealed class Match
 
     public void AddPlayerToPlayingTeam (int teamId, int playerId){
         
-       if (teamId == Team1Id)
+       if (teamId == Team1PlayingTeam.TeamId)
         {
             _team1PlayingTeam.AddPlayer(playerId);
             return;
         }
 
-        if (teamId == Team2Id)
+        if (teamId == Team2PlayingTeam.TeamId)
         {
             _team2PlayingTeam.AddPlayer(playerId);
             return;

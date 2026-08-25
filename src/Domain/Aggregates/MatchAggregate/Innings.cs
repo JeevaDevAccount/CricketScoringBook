@@ -16,7 +16,8 @@ public sealed class Innings
     public int CurrentNonStrikerId { get; private set; }
     public int CurrentBowlerId { get; private set; }
     public bool IsCompleted { get; private set; }
-    
+    public int SuperOverNumber { get; private set; }
+
     private readonly List<Over> _overs = new();
     public IReadOnlyCollection<Over> Overs => _overs.AsReadOnly();
     private Over CurrentOver => _overs[^1];
@@ -33,6 +34,7 @@ public sealed class Innings
 		int battingTeamId,
 		int bowlingTeamId,
 		InningsType type,
+		int superOverNumber,
 		int maxOvers,
     	int? targetRuns,
 		int currentStrikerId,
@@ -74,7 +76,8 @@ public sealed class Innings
 		InningsNumber = inningsNumber;
 		BattingTeamId = battingTeamId;
 		BowlingTeamId = bowlingTeamId;
-		Type = type
+		Type = type;
+		SuperOverNumber = superOverNumber;
 		MaxOvers = maxOvers;
     	TargetRuns = targetRuns;
         
