@@ -13,11 +13,12 @@ public sealed class Delivery
     public int BatterRuns { get; private set; }
     public int TotalRuns { get; private set; }
     public ExtraType ExtraType { get; private set; }
-    public Dismissal Dismissal { get; private set; }
+    public Dismissal? Dismissal { get; private set; }
     public int? DismissedPlayerId { get; private set; }
     public DateTime Timestamp { get; private set; }
 
     public bool IsWicket =>
+        Dismissal is not null &&
         Dismissal.WicketType != WicketType.None;
 
     public bool IsLegal =>
@@ -37,7 +38,7 @@ public sealed class Delivery
         int batterRuns,
         int totalRuns,
         ExtraType extraType,
-        Dismissal dismissal,
+        Dismissal? dismissal,
         int? dismissedPlayerId
         )
     {
@@ -85,7 +86,7 @@ public sealed class Delivery
                 "Total runs cannot be less than batter runs.",
                 nameof(totalRuns));
 
-        if (dismissal.wicketType == WicketType.None &&
+        if (dismissal.WicketType == WicketType.None &&
             dismissedPlayerId.HasValue)
         {
             throw new ArgumentException(
@@ -93,7 +94,7 @@ public sealed class Delivery
                 nameof(dismissedPlayerId));
         }
 
-        if (dismissal.wicketType != WicketType.None &&
+        if (dismissal is not null && dismissal.WicketType != WicketType.None &&
             !dismissedPlayerId.HasValue)
         {
             throw new ArgumentException(
@@ -129,7 +130,7 @@ public sealed class Delivery
         int batterRuns,
         int totalRuns,
         ExtraType extraType = ExtraType.None,
-        Dismissal dismissal,
+        Dismissal? dismissal  = null,
         int? dismissedPlayerId = null
         )
     {
