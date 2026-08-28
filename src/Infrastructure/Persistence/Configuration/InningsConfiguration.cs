@@ -65,5 +65,17 @@ public sealed class InningsConfiguration : IEntityTypeConfiguration<Innings>
             .WithOne()
             .HasForeignKey("InningsId")
             .OnDelete(DeleteBehavior.Cascade);
+        
+        builder.HasMany<BattingScore>("_battingScores")
+            .WithOne()
+            .HasForeignKey("InningsId")
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany<BowlingScore>("_bowlingScores")
+            .WithOne()
+            .HasForeignKey("InningsId")
+            .OnDelete(DeleteBehavior.Cascade);
+        
+        builder.HasIndex("MatchId", nameof(Innings.InningsNumber)).IsUnique();
     }
 }

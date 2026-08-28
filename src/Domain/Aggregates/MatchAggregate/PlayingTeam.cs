@@ -3,48 +3,45 @@ namespace Domain.Aggregates.MatchAggregate;
 public sealed class PlayingTeam
 {
     private const int MaximumPlayers = 11;
-    private readonly List<int> _playerIds = [];
-    public int TeamId { get; }
-    public IReadOnlyList<int> Players => _playerIds.AsReadOnly();
 
-    private PlayingTeam()
-    {
-    }
+    private readonly List<PlayingTeamPlayer> _players = [];
+
+    public int TeamId { get; }
+
+    public IReadOnlyCollection<PlayingTeamPlayer> Players =>
+        _players.AsReadOnly();
+
+    private PlayingTeam() { }
 
     private PlayingTeam(int teamId)
     {
         if (teamId <= 0)
-            throw new ArgumentOutOfRangeException(nameof(teamId), "Invalid team id.");
+            throw new ArgumentOutOfRangeException(nameof(teamId));
 
         TeamId = teamId;
     }
 
     public static PlayingTeam Create(int teamId)
-    {
-        return new PlayingTeam(teamId);
-    }
+        => new(teamId);
 
     public void AddPlayer(int playerId)
     {
         if (playerId <= 0)
-            throw new ArgumentOutOfRangeException(nameof(playerId), "Invalid player id.");
+            throw new ArgumentOutOfRangeException(nameof(playerId));
 
-        if (ContainsPlayer(playerId))
-            throw new InvalidOperationException("Player already exists in the playing team.");
+        if (_players.Any(x => x.PlayerId == playerId))
+            throw new InvalidOperationException("Player already exists.");
 
-        if (_playerIds.Count >= MaximumPlayers)
-            throw new InvalidOperationException("A playing team cannot contain more than 11 players.");
+        if (_players.Count >= MaximumPlayers)
+            throw new InvalidOperationException(
+                "A playing team cannot contain more than 11 players.");
 
-        _playerIds.Add(playerId);
+        _players.Add(PlayingTeamPlayer.Create(playerId));
     }
 
     public bool ContainsPlayer(int playerId)
-    {
-        return _playerIds.Contains(playerId);
-    }
+        => _players.Any(x => x.PlayerId == playerId);
 
     public int PlayerCount()
-    {
-        return _playerIds.Count;
-    }
+        => _players.Count;
 }

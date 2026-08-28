@@ -4,7 +4,8 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Persistence.Configurations;
 
-public sealed class MatchConfiguration : IEntityTypeConfiguration<Match>
+public sealed class MatchConfiguration
+    : IEntityTypeConfiguration<Match>
 {
     public void Configure(EntityTypeBuilder<Match> builder)
     {
@@ -45,24 +46,40 @@ public sealed class MatchConfiguration : IEntityTypeConfiguration<Match>
         builder.Property(x => x.Result)
             .IsRequired(false);
 
-        // Team 1 PlayingTeam
-        builder.OwnsOne(
-            x => x.Team1PlayingTeam,
-            playingTeam =>
-            {
-                playingTeam.Property(x => x.TeamId)
-                    .HasColumnName("Team1Id")
-                    .IsRequired();
-            });
+        // EF-only FK values used to identify
+        // Team 1 and Team 2 PlayingTeam rows.
+        builder.Property<int>("Team1TeamId")
+            .IsRequired();
 
-        // Team 2 PlayingTeam
-        builder.OwnsOne(
-            x => x.Team2PlayingTeam,
-            playingTeam =>
-            {
-                playingTeam.Property(x => x.TeamId)
-                    .HasColumnName("Team2Id")
-                    .IsRequired();
-            });
+        builder.Property<int>("Team2TeamId")
+            .IsRequired();
+
+        // Match -> Team 1 PlayingTeam
+        builder.HasOne(x => x.Team1PlayingTeam)
+            .WithOne()
+            .HasForeignKey<Match>(
+                "Id",
+                "Team1TeamId")
+            .HasPrincipalKey<PlayingTeam>(
+                "MatchId",
+                nameof(PlayingTeam.TeamId))
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Match -> Team 2 PlayingTeam
+        builder.HasOne(x => x.Team2PlayingTeam)
+            .WithOne()
+            .HasForeignKey<Match>(
+                "Id",
+                "Team2TeamId")
+            .HasPrincipalKey<PlayingTeam>(
+                "MatchId",
+                nameof(PlayingTeam.TeamId))
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Match -> Innings
+        builder.HasMany(x => x.Innings)
+            .WithOne()
+            .HasForeignKey("MatchId")
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

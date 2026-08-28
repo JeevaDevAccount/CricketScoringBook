@@ -1,3 +1,4 @@
+using Domain.Enum; 
 namespace Domain.Aggregates.MatchAggregate;
 
 public sealed class Innings
@@ -22,11 +23,14 @@ public sealed class Innings
     public IReadOnlyCollection<Over> Overs => _overs.AsReadOnly();
     private Over CurrentOver => _overs[^1];
     
-    private readonly Dictionary<int, BattingScore> _battingScores = [];
-    private readonly Dictionary<int, BowlingScore> _bowlingScores = [];
-    
-    public IReadOnlyDictionary<int, BattingScore> BattingScores => _battingScores;
-	public IReadOnlyDictionary<int, BowlingScore> BowlingScores => _bowlingScores;
+    private readonly List<BattingScore> _battingScores = [];
+	private readonly List<BowlingScore> _bowlingScores = [];
+
+	public IReadOnlyCollection<BattingScore> BattingScores =>
+		_battingScores.AsReadOnly();
+
+	public IReadOnlyCollection<BowlingScore> BowlingScores =>
+		_bowlingScores.AsReadOnly();
     
     private Innings(){}
     
