@@ -1,3 +1,6 @@
+using Domain.Aggregates.MatchAggregate;
+using Domain.Enum;
+
 namespace Application.Matches.Queries;
 
 public sealed record MatchDto(
@@ -47,7 +50,7 @@ public sealed record BattingScoreDto(
     int Fours,
     int Sixes,
     decimal StrikeRate,
-    DismissalType DismissalType
+    Dismissal DismissalType
 );
 
 public sealed record BowlingScoreDto(

@@ -11,6 +11,7 @@ public sealed class PlayingTeamPlayerConfiguration
     {
         builder.ToTable("PlayingTeamPlayers");
 
+        // Shadow FK values
         builder.Property<Guid>("MatchId");
         builder.Property<int>("TeamId");
 
@@ -24,7 +25,9 @@ public sealed class PlayingTeamPlayerConfiguration
 
         builder.HasOne<PlayingTeam>()
             .WithMany(x => x.Players)
-            .HasForeignKey("MatchId", "TeamId")
+            .HasForeignKey(
+                "MatchId",
+                "TeamId")
             .HasPrincipalKey(
                 "MatchId",
                 nameof(PlayingTeam.TeamId))

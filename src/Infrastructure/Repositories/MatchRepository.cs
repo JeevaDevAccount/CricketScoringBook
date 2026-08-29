@@ -18,37 +18,22 @@ public sealed class MatchRepository : IMatchRepository
         Guid matchId,
         CancellationToken cancellationToken)
     {
-        var match = await _context.Matches
+        return await _context.Matches
+            // Team 1 + Players
+            .Include(x => x.Team1PlayingTeam)
+                .ThenInclude(x => x.Players)
+
+            // Team 2 + Players
+            .Include(x => x.Team2PlayingTeam)
+                .ThenInclude(x => x.Players)
+
+            // Innings + Overs + Deliveries
             .Include(x => x.Innings)
                 .ThenInclude(x => x.Overs)
                     .ThenInclude(x => x.Deliveries)
+
             .SingleOrDefaultAsync(
                 x => x.Id == matchId,
                 cancellationToken);
-
-        if (match is null)
-            return null;
-
-        var playerRows = await _context.PlayingTeamPlayers
-            .Where(x => x.MatchId == matchId)
-            .ToListAsync(cancellationToken);
-
-        // Reconstruct Team 1 players
-        foreach (var player in playerRows
-            .Where(x => x.TeamId == match.Team1PlayingTeam.TeamId))
-        {
-            if (!match.Team1PlayingTeam.ContainsPlayer(player.PlayerId))
-                match.Team1PlayingTeam.AddPlayer(player.PlayerId);
-        }
-
-        // Reconstruct Team 2 players
-        foreach (var player in playerRows
-            .Where(x => x.TeamId == match.Team2PlayingTeam.TeamId))
-        {
-            if (!match.Team2PlayingTeam.ContainsPlayer(player.PlayerId))
-                match.Team2PlayingTeam.AddPlayer(player.PlayerId);
-        }
-
-        return match;
     }
 }

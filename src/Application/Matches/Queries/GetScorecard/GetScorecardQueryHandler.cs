@@ -1,9 +1,11 @@
+using Application.Abstractions.Interfaces;
+
 namespace Application.Matches.Queries.GetMatch;
 
-public sealed class GetScorecardQueryHandler(){
+public sealed class GetScorecardQueryHandler{
     private readonly IMatchQueries _matchQueries;
 
-    public sealed GetScorecardQueryHandler(IMatchQueries matchQueries){
+    public GetScorecardQueryHandler(IMatchQueries matchQueries){
         _matchQueries = matchQueries;
     }
 

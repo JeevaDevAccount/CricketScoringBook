@@ -1,3 +1,7 @@
+using Application.Abstractions.Interfaces;
+using Application.Matches.Commands.MatchCommands;
+using Domain.Aggregates.MatchAggregate;
+
 namespace Application.Matches.Commands.MatchCommandHandlers;
 
 public sealed class ClaimScorerHandler
@@ -134,9 +138,8 @@ public sealed class RecordDeliveryHandler
         command.BatterRuns,
         command.TotalRuns,
         command.ExtraType,
-        command.WicketType,
-        command.DismissedPlayerId,
-        command.FielderId);
+        command.Dismissal,
+        command.DismissedPlayerId);
 
         match.RecordDelivery(input);
 
@@ -165,7 +168,7 @@ public sealed class RecordDeliveryHandler
         }
     }
 
-    public sealed class AddPlayerToPlayingTeamHandler(Guid MatchId, int TeamId, int PlayerId){
+    public sealed class AddPlayerToPlayingTeamHandler{
 
         private readonly IMatchRepository _matchRepository;
         private readonly IUnitOfWork _unitOfWork;

@@ -1,4 +1,4 @@
-using Domain.Entities;
+using MatchInnings = Domain.Aggregates.MatchAggregate.Innings;
 using Domain.Enum;
 
 namespace Domain.Aggregates.MatchAggregate;
@@ -300,7 +300,7 @@ public sealed class Match
             targetRuns = _innings[0].TotalRuns + 1;
         }
 
-        var innings = Innings.Create(inningsNumber,battingTeamId,bowlingTeamId,InningsType.Regular,0,MaxOvers,targetRuns,strikerId,nonStrikerId,bowlerId);
+        var innings = MatchInnings.Create(inningsNumber,battingTeamId,bowlingTeamId,InningsType.Regular,0,MaxOvers,targetRuns,strikerId,nonStrikerId,bowlerId);
 
         _innings.Add(innings);
 
@@ -348,7 +348,7 @@ public sealed class Match
 
         int inningsNumber = _innings.Count + 1;
 
-        var innings = Innings.Create(
+        var innings = MatchInnings.Create(
             inningsNumber,
             battingTeamId,
             bowlingTeamId,

@@ -1,4 +1,6 @@
 namespace Application.Abstractions.Interfaces;
+using Domain.Aggregates.MatchAggregate;
+using Application.Matches.Queries;
 
 public interface IMatchRepository
 {

@@ -1,6 +1,8 @@
+using Application.Abstractions.Interfaces;
+
 namespace Application.Matches.Queries.GetMatch;
 
-public sealed class GetMatchQueryHandler(){
+public sealed class GetMatchQueryHandler{
     private readonly IMatchQueries _matchQueries;
 
     public GetMatchQueryHandler(IMatchQueries matchQueries){

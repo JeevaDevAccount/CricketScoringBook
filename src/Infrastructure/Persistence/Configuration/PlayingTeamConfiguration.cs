@@ -1,3 +1,9 @@
+using Domain.Aggregates.MatchAggregate;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace Infrastructure.Persistence.Configurations;
+
 public sealed class PlayingTeamConfiguration
     : IEntityTypeConfiguration<PlayingTeam>
 {

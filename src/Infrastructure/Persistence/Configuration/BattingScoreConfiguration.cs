@@ -34,4 +34,9 @@ public sealed class BattingScoreConfiguration : IEntityTypeConfiguration<Deliver
                 .IsRequired(false);
         });
     }
+
+    public void Configure(EntityTypeBuilder<Delivery> builder)
+    {
+        throw new NotImplementedException();
+    }
 }

@@ -1,3 +1,6 @@
+using Domain.Enum;
+using Domain.Aggregates.MatchAggregate;
+
 namespace Application.Matches.Commands.MatchCommands;
 
 public sealed record ClaimScorerCommand(Guid MatchId, int ScorerId);
