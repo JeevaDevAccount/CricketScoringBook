@@ -39,7 +39,8 @@ public sealed class BattingScore
 		if(batterRuns == 6)
 			Sixes++;
 			
-		if (dismissal.WicketType != Domain.Enum.WicketType.None) Dismissal = dismissal;
+		if (dismissal is not null)
+      Dismissal = dismissal;
 }
 	
 	public void UndoDelivery(int batterRuns, bool countAsBall, Dismissal? dismissal){
@@ -66,6 +67,7 @@ public sealed class BattingScore
       Sixes--;
     }
 
-    if (dismissal.WicketType != Domain.Enum.WicketType.None) Dismissal = null;
+    if (dismissal is not null)
+      Dismissal = null;
 	}
 }

@@ -6,18 +6,14 @@ namespace Domain.Aggregates.MatchAggregate;
 public sealed class Match
 {
     public Guid Id { get; private set; }
-
     public MatchStatus Status { get; private set; }
-
     public int? ActiveScorerId { get; private set; }
-
     public int MaxOvers { get; private set; }
-
     public DateTime Timestamp { get; private set; }
 
     // Playing teams
-    private readonly PlayingTeam _team1PlayingTeam;
-    private readonly PlayingTeam _team2PlayingTeam;
+    private readonly PlayingTeam _team1PlayingTeam = null!;
+    private readonly PlayingTeam _team2PlayingTeam = null!;
 
     public PlayingTeam Team1PlayingTeam => _team1PlayingTeam;
     public PlayingTeam Team2PlayingTeam => _team2PlayingTeam;

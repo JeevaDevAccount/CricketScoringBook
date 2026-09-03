@@ -4,7 +4,8 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Persistence.Configurations;
 
-public sealed class InningsConfiguration : IEntityTypeConfiguration<Innings>
+public sealed class InningsConfiguration
+    : IEntityTypeConfiguration<Innings>
 {
     public void Configure(EntityTypeBuilder<Innings> builder)
     {
@@ -54,28 +55,24 @@ public sealed class InningsConfiguration : IEntityTypeConfiguration<Innings>
         builder.Property(x => x.IsCompleted)
             .IsRequired();
 
-        // Match → Innings
+        builder.Property<Guid>("MatchId")
+            .IsRequired();
+
         builder.HasOne<Match>()
             .WithMany(x => x.Innings)
             .HasForeignKey("MatchId")
+            .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Innings → Overs
         builder.HasMany(x => x.Overs)
             .WithOne()
             .HasForeignKey("InningsId")
-            .OnDelete(DeleteBehavior.Cascade);
-        
-        builder.HasMany<BattingScore>("_battingScores")
-            .WithOne()
-            .HasForeignKey("InningsId")
+            .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasMany<BowlingScore>("_bowlingScores")
-            .WithOne()
-            .HasForeignKey("InningsId")
-            .OnDelete(DeleteBehavior.Cascade);
-        
-        builder.HasIndex("MatchId", nameof(Innings.InningsNumber)).IsUnique();
+        builder.HasIndex(
+                "MatchId",
+                nameof(Innings.InningsNumber))
+            .IsUnique();
     }
 }

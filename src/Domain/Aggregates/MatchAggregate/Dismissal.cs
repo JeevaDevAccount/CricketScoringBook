@@ -25,14 +25,14 @@ public sealed class Dismissal
 
     private static void Validate(WicketType wicketType,int? fielderId)
     {
-	    if (wicketType == WicketType.None)
-        throw new ArgumentException("Dismissal type cannot be None.", nameof(wicketType));
+        if (wicketType == WicketType.None)
+            throw new ArgumentException("Dismissal type cannot be None.", nameof(wicketType));
       
-      bool requiresFielder = wicketType == WicketType.Caught || wicketType == WicketType.RunOut || wicketType == WicketType.Stumped; 
+        bool requiresFielder = wicketType == WicketType.Caught || wicketType == WicketType.RunOut || wicketType == WicketType.Stumped; 
       
-      if (requiresFielder && (!fielderId.HasValue || fielderId <= 0)) { 
-	      throw new ArgumentException( "Fielder is required for this dismissal type.", nameof(fielderId)); } 
-      if (!requiresFielder && fielderId.HasValue) { 
-	      throw new ArgumentException( "Fielder is not applicable for this dismissal type.", nameof(fielderId)); }
+        if (requiresFielder && (!fielderId.HasValue || fielderId <= 0)) { 
+            throw new ArgumentException( "Fielder is required for this dismissal type.", nameof(fielderId)); } 
+        if (!requiresFielder && fielderId.HasValue) { 
+            throw new ArgumentException( "Fielder is not applicable for this dismissal type.", nameof(fielderId)); }
     }
 }

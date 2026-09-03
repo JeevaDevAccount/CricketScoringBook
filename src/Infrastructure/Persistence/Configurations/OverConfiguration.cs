@@ -24,12 +24,18 @@ public sealed class OverConfiguration : IEntityTypeConfiguration<Over>
         builder.Property(x => x.IsEditable)
             .IsRequired();
 
+        builder.Property<Guid>("InningsId")
+            .IsRequired();
+
         builder.HasMany(x => x.Deliveries)
             .WithOne()
             .HasForeignKey("OverId")
+            .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasIndex("InningsId", nameof(Over.OverNumber))
+        builder.HasIndex(
+                "InningsId",
+                nameof(Over.OverNumber))
             .IsUnique();
     }
 }

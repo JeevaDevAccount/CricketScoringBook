@@ -4,7 +4,8 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Persistence.Configurations;
 
-public sealed class DeliveryConfiguration : IEntityTypeConfiguration<Delivery>
+public sealed class DeliveryConfiguration
+    : IEntityTypeConfiguration<Delivery>
 {
     public void Configure(EntityTypeBuilder<Delivery> builder)
     {
@@ -39,18 +40,26 @@ public sealed class DeliveryConfiguration : IEntityTypeConfiguration<Delivery>
         builder.Property(x => x.ExtraType)
             .IsRequired();
 
-        builder.Property(x => x.Dismissal)
-            .IsRequired();
-
         builder.Property(x => x.DismissedPlayerId)
             .IsRequired(false);
 
         builder.Property(x => x.Timestamp)
             .IsRequired();
 
-        builder.HasIndex("OverId", nameof(Delivery.SequenceNumber))
-            .IsUnique();
+        builder.Property<Guid>("OverId")
+            .IsRequired();
 
-        builder.HasIndex("OverId", nameof(Delivery.BallNumberInOver));
+        builder.ComplexProperty(
+            x => x.Dismissal,
+            dismissal =>
+            {
+                dismissal.Property(x => x.WicketType)
+                    .HasColumnName("DismissalWicketType")
+                    .IsRequired();
+
+                dismissal.Property(x => x.FielderId)
+                    .HasColumnName("DismissalFielderId")
+                    .IsRequired(false);
+            });
     }
 }

@@ -11,14 +11,15 @@ public sealed class PlayingTeamConfiguration
     {
         builder.ToTable("PlayingTeams");
 
-        builder.Property<Guid>("MatchId");
+        builder.Property<Guid>("MatchId")
+            .IsRequired();
+
+        builder.Property(x => x.TeamId)
+            .IsRequired();
 
         builder.HasKey(
             "MatchId",
             nameof(PlayingTeam.TeamId));
-
-        builder.Property(x => x.TeamId)
-            .IsRequired();
 
         builder.Navigation(x => x.Players)
             .UsePropertyAccessMode(PropertyAccessMode.Field);

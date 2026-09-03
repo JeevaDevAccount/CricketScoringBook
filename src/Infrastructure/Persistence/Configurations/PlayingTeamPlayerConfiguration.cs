@@ -7,30 +7,32 @@ namespace Infrastructure.Persistence.Configurations;
 public sealed class PlayingTeamPlayerConfiguration
     : IEntityTypeConfiguration<PlayingTeamPlayer>
 {
-    public void Configure(EntityTypeBuilder<PlayingTeamPlayer> builder)
+    public void Configure(
+        EntityTypeBuilder<PlayingTeamPlayer> builder)
     {
         builder.ToTable("PlayingTeamPlayers");
 
-        // Shadow FK values
-        builder.Property<Guid>("MatchId");
-        builder.Property<int>("TeamId");
+        builder.Property<Guid>("MatchId")
+            .IsRequired();
+
+        builder.Property<int>("TeamId")
+            .IsRequired();
+
+        builder.Property(x => x.PlayerId)
+            .IsRequired();
 
         builder.HasKey(
             "MatchId",
             "TeamId",
             nameof(PlayingTeamPlayer.PlayerId));
 
-        builder.Property(x => x.PlayerId)
-            .IsRequired();
-
         builder.HasOne<PlayingTeam>()
             .WithMany(x => x.Players)
-            .HasForeignKey(
-                "MatchId",
-                "TeamId")
+            .HasForeignKey("MatchId", "TeamId")
             .HasPrincipalKey(
                 "MatchId",
                 nameof(PlayingTeam.TeamId))
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
     }
 }

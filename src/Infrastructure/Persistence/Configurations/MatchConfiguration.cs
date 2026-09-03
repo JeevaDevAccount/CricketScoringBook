@@ -4,8 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Persistence.Configurations;
 
-public sealed class MatchConfiguration
-    : IEntityTypeConfiguration<Match>
+public sealed class MatchConfiguration : IEntityTypeConfiguration<Match>
 {
     public void Configure(EntityTypeBuilder<Match> builder)
     {
@@ -46,40 +45,28 @@ public sealed class MatchConfiguration
         builder.Property(x => x.Result)
             .IsRequired(false);
 
-        // EF-only FK values used to identify
-        // Team 1 and Team 2 PlayingTeam rows.
         builder.Property<int>("Team1TeamId")
             .IsRequired();
 
         builder.Property<int>("Team2TeamId")
             .IsRequired();
 
-        // Match -> Team 1 PlayingTeam
         builder.HasOne(x => x.Team1PlayingTeam)
             .WithOne()
-            .HasForeignKey<Match>(
-                "Id",
-                "Team1TeamId")
-            .HasPrincipalKey<PlayingTeam>(
-                "MatchId",
-                nameof(PlayingTeam.TeamId))
-            .OnDelete(DeleteBehavior.Restrict);
+            .HasForeignKey<Match>("Id", "Team1TeamId")
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired();
 
-        // Match -> Team 2 PlayingTeam
         builder.HasOne(x => x.Team2PlayingTeam)
             .WithOne()
-            .HasForeignKey<Match>(
-                "Id",
-                "Team2TeamId")
-            .HasPrincipalKey<PlayingTeam>(
-                "MatchId",
-                nameof(PlayingTeam.TeamId))
-            .OnDelete(DeleteBehavior.Restrict);
+            .HasForeignKey<Match>("Id", "Team2TeamId")
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired();
 
-        // Match -> Innings
         builder.HasMany(x => x.Innings)
             .WithOne()
             .HasForeignKey("MatchId")
+            .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -31,14 +31,12 @@ public sealed class Innings
     private Over CurrentOver =>
         _overs[^1];
 
-    private readonly Dictionary<int, BattingScore> _battingScores = [];
-    private readonly Dictionary<int, BowlingScore> _bowlingScores = [];
+    private readonly List<BattingScore> _battingScores = [];
+    private readonly List<BowlingScore> _bowlingScores = [];
 
-    public IReadOnlyCollection<BattingScore> BattingScores =>
-        _battingScores.Values;
+    public IReadOnlyCollection<BattingScore> BattingScores => _battingScores.AsReadOnly();
 
-    public IReadOnlyCollection<BowlingScore> BowlingScores =>
-        _bowlingScores.Values;
+    public IReadOnlyCollection<BowlingScore> BowlingScores => _bowlingScores.AsReadOnly();
 
     private Innings()
     {
@@ -372,22 +370,26 @@ public sealed class Innings
 
     private BattingScore GetOrCreateBattingScore(int playerId)
     {
-        if (_battingScores.TryGetValue(playerId, out BattingScore? score))
+        BattingScore? score = _battingScores.FirstOrDefault(x => x.PlayerId == playerId);
+
+        if (score is not null)
             return score;
 
         score = BattingScore.Create(playerId);
-        _battingScores.Add(playerId, score);
+        _battingScores.Add(score);
 
         return score;
     }
 
     private BowlingScore GetOrCreateBowlingScore(int playerId)
     {
-        if (_bowlingScores.TryGetValue(playerId, out BowlingScore? score))
+        BowlingScore? score = _bowlingScores.FirstOrDefault(x => x.PlayerId == playerId);
+
+        if (score is not null)
             return score;
 
         score = BowlingScore.Create(playerId);
-        _bowlingScores.Add(playerId, score);
+        _bowlingScores.Add(score);
 
         return score;
     }

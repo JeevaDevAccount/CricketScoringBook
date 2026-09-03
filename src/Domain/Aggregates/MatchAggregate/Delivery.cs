@@ -39,8 +39,7 @@ public sealed class Delivery
         int totalRuns,
         ExtraType extraType,
         Dismissal? dismissal,
-        int? dismissedPlayerId
-        )
+        int? dismissedPlayerId)
     {
         if (sequenceNumber <= 0)
             throw new ArgumentException(
@@ -86,16 +85,14 @@ public sealed class Delivery
                 "Total runs cannot be less than batter runs.",
                 nameof(totalRuns));
 
-        if (dismissal.WicketType == WicketType.None &&
-            dismissedPlayerId.HasValue)
+        if (dismissal is null && dismissedPlayerId.HasValue)
         {
             throw new ArgumentException(
                 "Dismissed player cannot be specified without a wicket.",
                 nameof(dismissedPlayerId));
         }
 
-        if (dismissal is not null && dismissal.WicketType != WicketType.None &&
-            !dismissedPlayerId.HasValue)
+        if (dismissal is not null && !dismissedPlayerId.HasValue)
         {
             throw new ArgumentException(
                 "Dismissed player is required when a wicket is recorded.",
@@ -116,8 +113,8 @@ public sealed class Delivery
 
         ExtraType = extraType;
         Dismissal = dismissal;
-
         DismissedPlayerId = dismissedPlayerId;
+
         Timestamp = DateTime.UtcNow;
     }
 
@@ -130,9 +127,8 @@ public sealed class Delivery
         int batterRuns,
         int totalRuns,
         ExtraType extraType = ExtraType.None,
-        Dismissal? dismissal  = null,
-        int? dismissedPlayerId = null
-        )
+        Dismissal? dismissal = null,
+        int? dismissedPlayerId = null)
     {
         return new Delivery(
             sequenceNumber,
@@ -144,7 +140,6 @@ public sealed class Delivery
             totalRuns,
             extraType,
             dismissal,
-            dismissedPlayerId
-        );
+            dismissedPlayerId);
     }
 }
