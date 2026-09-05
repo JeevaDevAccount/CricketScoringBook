@@ -8,10 +8,12 @@ public sealed class ClaimScorerHandler
 {
     private readonly IMatchRepository _matchRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMatchUpdateNotifier _matchUpdateNotifier;
 
-    public ClaimScorerHandler(IMatchRepository matchRepository, IUnitOfWork unitOfWork){
+    public ClaimScorerHandler(IMatchRepository matchRepository, IUnitOfWork unitOfWork, IMatchUpdateNotifier matchUpdateNotifier){
         _matchRepository = matchRepository;
         _unitOfWork = unitOfWork;
+        _matchUpdateNotifier = matchUpdateNotifier;
     }
 
     public async Task Handle(ClaimScorerCommand command, CancellationToken cancellationToken){
@@ -23,6 +25,7 @@ public sealed class ClaimScorerHandler
         match.ClaimScorer(command.ScorerId);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _matchUpdateNotifier.NotifyMatchUpdatedAsync(command.MatchId,cancellationToken);
     }
 }
 
@@ -30,10 +33,12 @@ public sealed class ChangeScorerHandler
 {
     private readonly IMatchRepository _matchRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMatchUpdateNotifier _matchUpdateNotifier;
 
-    public ChangeScorerHandler(IMatchRepository matchRepository, IUnitOfWork unitOfWork){
+    public ChangeScorerHandler(IMatchRepository matchRepository, IUnitOfWork unitOfWork, IMatchUpdateNotifier matchUpdateNotifier){
         _matchRepository = matchRepository;
         _unitOfWork = unitOfWork;
+        _matchUpdateNotifier = matchUpdateNotifier;
     }
 
     public async Task Handle(ChangeScorerCommand command, CancellationToken cancellationToken){
@@ -45,6 +50,7 @@ public sealed class ChangeScorerHandler
         match.ChangeScorer(command.ScorerId);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _matchUpdateNotifier.NotifyMatchUpdatedAsync(command.MatchId,cancellationToken);
     }
 }
 
@@ -52,10 +58,12 @@ public sealed class RecordTossHandler
 {
     private readonly IMatchRepository _matchRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMatchUpdateNotifier _matchUpdateNotifier;
 
-    public RecordTossHandler(IMatchRepository matchRepository, IUnitOfWork unitOfWork){
+    public RecordTossHandler(IMatchRepository matchRepository, IUnitOfWork unitOfWork, IMatchUpdateNotifier matchUpdateNotifier){
         _matchRepository = matchRepository;
         _unitOfWork = unitOfWork;
+        _matchUpdateNotifier = matchUpdateNotifier;
     }
 
     public async Task Handle(RecordTossCommand command, CancellationToken cancellationToken){
@@ -68,6 +76,7 @@ public sealed class RecordTossHandler
         match.Toss(command.TossWonTeamId, command.Decision);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _matchUpdateNotifier.NotifyMatchUpdatedAsync(command.MatchId,cancellationToken);
     }
 }
 
@@ -75,10 +84,12 @@ public sealed class StartMatchHandler
 {
     private readonly IMatchRepository _matchRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMatchUpdateNotifier _matchUpdateNotifier;
 
-    public StartMatchHandler(IMatchRepository matchRepository, IUnitOfWork unitOfWork){
+    public StartMatchHandler(IMatchRepository matchRepository, IUnitOfWork unitOfWork, IMatchUpdateNotifier matchUpdateNotifier){
         _matchRepository = matchRepository;
         _unitOfWork = unitOfWork;
+        _matchUpdateNotifier = matchUpdateNotifier;
     }
 
     public async Task Handle(StartMatchCommand command, CancellationToken cancellationToken){
@@ -90,6 +101,7 @@ public sealed class StartMatchHandler
         match.StartMatch();
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _matchUpdateNotifier.NotifyMatchUpdatedAsync(command.MatchId,cancellationToken);
     }
 }
 
@@ -97,10 +109,12 @@ public sealed class StartInningsHandler
 {
     private readonly IMatchRepository _matchRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMatchUpdateNotifier _matchUpdateNotifier;
 
-    public StartInningsHandler(IMatchRepository matchRepository, IUnitOfWork unitOfWork){
+    public StartInningsHandler(IMatchRepository matchRepository, IUnitOfWork unitOfWork, IMatchUpdateNotifier matchUpdateNotifier){
         _matchRepository = matchRepository;
         _unitOfWork = unitOfWork;
+        _matchUpdateNotifier = matchUpdateNotifier;
     }
 
     public async Task Handle(StartInningsCommand command, CancellationToken cancellationToken){
@@ -112,6 +126,7 @@ public sealed class StartInningsHandler
         match.StartInnings(command.StrikerId,command.NonStrikerId,command.BowlerId);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _matchUpdateNotifier.NotifyMatchUpdatedAsync(command.MatchId,cancellationToken);
     }
 }
 
@@ -119,10 +134,12 @@ public sealed class RecordDeliveryHandler
 {
     private readonly IMatchRepository _matchRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMatchUpdateNotifier _matchUpdateNotifier;
 
-    public RecordDeliveryHandler(IMatchRepository matchRepository, IUnitOfWork unitOfWork){
+    public RecordDeliveryHandler(IMatchRepository matchRepository, IUnitOfWork unitOfWork, IMatchUpdateNotifier matchUpdateNotifier){
         _matchRepository = matchRepository;
         _unitOfWork = unitOfWork;
+        _matchUpdateNotifier = matchUpdateNotifier;
     }
 
     public async Task Handle(RecordDeliveryCommand command, CancellationToken cancellationToken){
@@ -144,48 +161,53 @@ public sealed class RecordDeliveryHandler
         match.RecordDelivery(input);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _matchUpdateNotifier.NotifyMatchUpdatedAsync(command.MatchId,cancellationToken);
+    }
+}
+public sealed class UndoDeliveryHandler
+{
+    private readonly IMatchRepository _matchRepository;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMatchUpdateNotifier _matchUpdateNotifier;
+
+    public UndoDeliveryHandler(IMatchRepository matchRepository, IUnitOfWork unitOfWork, IMatchUpdateNotifier matchUpdateNotifier){
+        _matchRepository = matchRepository;
+        _unitOfWork = unitOfWork;
+        _matchUpdateNotifier = matchUpdateNotifier;
     }
 
-    public sealed class UndoDeliveryHandler
-    {
-        private readonly IMatchRepository _matchRepository;
-        private readonly IUnitOfWork _unitOfWork;
-
-        public UndoDeliveryHandler(IMatchRepository matchRepository, IUnitOfWork unitOfWork){
-            _matchRepository = matchRepository;
-            _unitOfWork = unitOfWork;
-        }
-
-        public async Task Handle(UndoDeliveryCommand command, CancellationToken cancellationToken){
-            var match = await _matchRepository.GetByIdAsync(command.MatchId,cancellationToken);
-            
-            if (match is null)
-                throw new InvalidOperationException("Match not found.");
-            
-            match.UndoDelivery();
-
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-        }
-    }
-
-    public sealed class AddPlayerToPlayingTeamHandler{
-
-        private readonly IMatchRepository _matchRepository;
-        private readonly IUnitOfWork _unitOfWork;
+    public async Task Handle(UndoDeliveryCommand command, CancellationToken cancellationToken){
+        var match = await _matchRepository.GetByIdAsync(command.MatchId,cancellationToken);
         
-        public AddPlayerToPlayingTeamHandler(IMatchRepository matchRepository, IUnitOfWork unitOfWork){
-            _matchRepository = matchRepository;
-            _unitOfWork = unitOfWork;
-        }
+        if (match is null)
+            throw new InvalidOperationException("Match not found.");
+        
+        match.UndoDelivery();
 
-        public async Task Handle(AddPlayerToPlayingTeamCommand command, CancellationToken cancellationToken){
-            var match = await _matchRepository.GetByIdAsync(command.MatchId,cancellationToken);
-            
-            if (match is null)
-                throw new InvalidOperationException("Match not found.");
-            
-            match.AddPlayerToPlayingTeam(command.TeamId,command.PlayerId);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-        }
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _matchUpdateNotifier.NotifyMatchUpdatedAsync(command.MatchId, cancellationToken);
+    }
+}
+
+public sealed class AddPlayerToPlayingTeamHandler{
+
+    private readonly IMatchRepository _matchRepository;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMatchUpdateNotifier _matchUpdateNotifier;
+
+    public AddPlayerToPlayingTeamHandler(IMatchRepository matchRepository, IUnitOfWork unitOfWork, IMatchUpdateNotifier matchUpdateNotifier){
+        _matchRepository = matchRepository;
+        _unitOfWork = unitOfWork;
+        _matchUpdateNotifier = matchUpdateNotifier;
+    }
+    public async Task Handle(AddPlayerToPlayingTeamCommand command, CancellationToken cancellationToken){
+        var match = await _matchRepository.GetByIdAsync(command.MatchId,cancellationToken);
+        
+        if (match is null)
+            throw new InvalidOperationException("Match not found.");
+        
+        match.AddPlayerToPlayingTeam(command.TeamId,command.PlayerId);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _matchUpdateNotifier.NotifyMatchUpdatedAsync(command.MatchId, cancellationToken);
     }
 }

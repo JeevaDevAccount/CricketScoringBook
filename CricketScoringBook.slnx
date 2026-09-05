@@ -6,6 +6,6 @@
     <Project Path="src/WebApi/WebApi.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/Tests/Tests.csproj" />
+    <Project Path="tests/Test/Tests.csproj" />
   </Folder>
 </Solution>

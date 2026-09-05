@@ -50,7 +50,7 @@ public sealed record BattingScoreDto(
     int Fours,
     int Sixes,
     decimal StrikeRate,
-    Dismissal DismissalType
+    Dismissal? DismissalType
 );
 
 public sealed record BowlingScoreDto(

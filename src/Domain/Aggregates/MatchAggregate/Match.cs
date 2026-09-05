@@ -8,6 +8,7 @@ public sealed class Match
     public Guid Id { get; private set; }
     public MatchStatus Status { get; private set; }
     public int? ActiveScorerId { get; private set; }
+    public Guid ConcurrencyVersion  { get; private set; }
     public int MaxOvers { get; private set; }
     public DateTime Timestamp { get; private set; }
 
@@ -73,7 +74,7 @@ public sealed class Match
         Id = Guid.NewGuid();
 
         Status = MatchStatus.Scheduled;
-
+        ConcurrencyVersion = Guid.NewGuid();
         CurrentSuperOverNumber = 0;
 
         _team1PlayingTeam = PlayingTeam.Create(team1Id);

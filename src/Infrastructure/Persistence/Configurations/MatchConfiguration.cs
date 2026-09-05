@@ -18,8 +18,9 @@ public sealed class MatchConfiguration : IEntityTypeConfiguration<Match>
         builder.Property(x => x.Status)
             .IsRequired();
 
-        builder.Property(x => x.ActiveScorerId)
-            .IsRequired(false);
+        builder.Property(x => x.ActiveScorerId).IsRequired(false);
+        
+        builder.Property(x => x.ConcurrencyVersion).IsRequired().IsConcurrencyToken();
 
         builder.Property(x => x.MaxOvers)
             .IsRequired();

@@ -9,7 +9,8 @@ public sealed class AppDbContext : DbContext
         : base(options)
     {
     }
-    //cricket-postgres
+    //docker ps
+    //docker start cricket-postgres
 
     public DbSet<Match> Matches => Set<Match>();
     
