@@ -77,8 +77,8 @@ public sealed class Match
         ConcurrencyVersion = Guid.NewGuid();
         CurrentSuperOverNumber = 0;
 
-        _team1PlayingTeam = PlayingTeam.Create(team1Id);
-        _team2PlayingTeam = PlayingTeam.Create(team2Id);
+        _team1PlayingTeam = PlayingTeam.Create(Id, team1Id);
+        _team2PlayingTeam = PlayingTeam.Create(Id, team2Id);
 
         MaxOvers = maxOvers;
 

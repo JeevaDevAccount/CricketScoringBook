@@ -56,6 +56,8 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasKey("InningsId", "PlayerId");
 
+                    b.HasIndex("InningsId");
+
                     b.ToTable("BattingScores", (string)null);
                 });
 
@@ -80,6 +82,8 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("InningsId", "PlayerId");
+
+                    b.HasIndex("InningsId");
 
                     b.ToTable("BowlingScores", (string)null);
                 });
@@ -222,12 +226,6 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Team1TeamId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Team2TeamId")
-                        .HasColumnType("integer");
-
                     b.Property<int?>("TeamBattingFirstId")
                         .HasColumnType("integer");
 
@@ -244,12 +242,6 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("Id", "Team1TeamId")
-                        .IsUnique();
-
-                    b.HasIndex("Id", "Team2TeamId")
-                        .IsUnique();
 
                     b.ToTable("Matches", (string)null);
                 });
@@ -277,35 +269,6 @@ namespace Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("Overs", (string)null);
-                });
-
-            modelBuilder.Entity("Domain.Aggregates.MatchAggregate.PlayingTeam", b =>
-                {
-                    b.Property<Guid>("MatchId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("TeamId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("MatchId", "TeamId");
-
-                    b.ToTable("PlayingTeams", (string)null);
-                });
-
-            modelBuilder.Entity("Domain.Aggregates.MatchAggregate.PlayingTeamPlayer", b =>
-                {
-                    b.Property<Guid>("MatchId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("TeamId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("PlayerId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("MatchId", "TeamId", "PlayerId");
-
-                    b.ToTable("PlayingTeamPlayers", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Aggregates.MatchAggregate.BattingScore", b =>
@@ -346,21 +309,85 @@ namespace Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Domain.Aggregates.MatchAggregate.Match", b =>
                 {
-                    b.HasOne("Domain.Aggregates.MatchAggregate.PlayingTeam", "Team1PlayingTeam")
-                        .WithOne()
-                        .HasForeignKey("Domain.Aggregates.MatchAggregate.Match", "Id", "Team1TeamId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                    b.OwnsOne("Domain.Aggregates.MatchAggregate.PlayingTeam", "Team1PlayingTeam", b1 =>
+                        {
+                            b1.Property<Guid>("MatchId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<int>("TeamId")
+                                .HasColumnType("integer");
+
+                            b1.HasKey("MatchId");
+
+                            b1.ToTable("MatchTeam1Details", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("MatchId");
+
+                            b1.OwnsMany("Domain.Aggregates.MatchAggregate.PlayingTeamPlayer", "Players", b2 =>
+                                {
+                                    b2.Property<Guid>("MatchId")
+                                        .HasColumnType("uuid");
+
+                                    b2.Property<int>("PlayerId")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("integer");
+
+                                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b2.Property<int>("PlayerId"));
+
+                                    b2.HasKey("MatchId", "PlayerId");
+
+                                    b2.ToTable("MatchTeam1Players", (string)null);
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("MatchId");
+                                });
+
+                            b1.Navigation("Players");
+                        });
+
+                    b.OwnsOne("Domain.Aggregates.MatchAggregate.PlayingTeam", "Team2PlayingTeam", b1 =>
+                        {
+                            b1.Property<Guid>("MatchId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<int>("TeamId")
+                                .HasColumnType("integer");
+
+                            b1.HasKey("MatchId");
+
+                            b1.ToTable("MatchTeam2Details", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("MatchId");
+
+                            b1.OwnsMany("Domain.Aggregates.MatchAggregate.PlayingTeamPlayer", "Players", b2 =>
+                                {
+                                    b2.Property<Guid>("MatchId")
+                                        .HasColumnType("uuid");
+
+                                    b2.Property<int>("PlayerId")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("integer");
+
+                                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b2.Property<int>("PlayerId"));
+
+                                    b2.HasKey("MatchId", "PlayerId");
+
+                                    b2.ToTable("MatchTeam2Players", (string)null);
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("MatchId");
+                                });
+
+                            b1.Navigation("Players");
+                        });
+
+                    b.Navigation("Team1PlayingTeam")
                         .IsRequired();
 
-                    b.HasOne("Domain.Aggregates.MatchAggregate.PlayingTeam", "Team2PlayingTeam")
-                        .WithOne()
-                        .HasForeignKey("Domain.Aggregates.MatchAggregate.Match", "Id", "Team2TeamId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                    b.Navigation("Team2PlayingTeam")
                         .IsRequired();
-
-                    b.Navigation("Team1PlayingTeam");
-
-                    b.Navigation("Team2PlayingTeam");
                 });
 
             modelBuilder.Entity("Domain.Aggregates.MatchAggregate.Over", b =>
@@ -368,15 +395,6 @@ namespace Infrastructure.Persistence.Migrations
                     b.HasOne("Domain.Aggregates.MatchAggregate.Innings", null)
                         .WithMany("Overs")
                         .HasForeignKey("InningsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Domain.Aggregates.MatchAggregate.PlayingTeamPlayer", b =>
-                {
-                    b.HasOne("Domain.Aggregates.MatchAggregate.PlayingTeam", null)
-                        .WithMany("Players")
-                        .HasForeignKey("MatchId", "TeamId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -398,11 +416,6 @@ namespace Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Domain.Aggregates.MatchAggregate.Over", b =>
                 {
                     b.Navigation("Deliveries");
-                });
-
-            modelBuilder.Entity("Domain.Aggregates.MatchAggregate.PlayingTeam", b =>
-                {
-                    b.Navigation("Players");
                 });
 #pragma warning restore 612, 618
         }

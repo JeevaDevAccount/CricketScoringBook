@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace tests.Test;
 
+[Collection("DatabaseTests")] 
 public sealed class MatchConcurrencyTests
 {
     [Fact]

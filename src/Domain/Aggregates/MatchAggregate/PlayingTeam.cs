@@ -3,9 +3,10 @@ namespace Domain.Aggregates.MatchAggregate;
 public sealed class PlayingTeam
 {
     private const int MaximumPlayers = 11;
-
     private readonly List<PlayingTeamPlayer> _players = [];
 
+    // 🌟 THE PERMANENT DOMAIN FIX: Composite identity properties
+    public Guid MatchId { get; private set; }
     public int TeamId { get; }
 
     public IReadOnlyCollection<PlayingTeamPlayer> Players =>
@@ -13,16 +14,17 @@ public sealed class PlayingTeam
 
     private PlayingTeam() { }
 
-    private PlayingTeam(int teamId)
+    private PlayingTeam(Guid matchId, int teamId)
     {
         if (teamId <= 0)
             throw new ArgumentOutOfRangeException(nameof(teamId));
 
+        MatchId = matchId;
         TeamId = teamId;
     }
 
-    public static PlayingTeam Create(int teamId)
-        => new(teamId);
+    public static PlayingTeam Create(Guid matchId, int teamId)
+        => new(matchId, teamId);
 
     public void AddPlayer(int playerId)
     {
@@ -39,9 +41,6 @@ public sealed class PlayingTeam
         _players.Add(PlayingTeamPlayer.Create(playerId));
     }
 
-    public bool ContainsPlayer(int playerId)
-        => _players.Any(x => x.PlayerId == playerId);
-
-    public int PlayerCount()
-        => _players.Count;
+    public bool ContainsPlayer(int playerId) => _players.Any(x => x.PlayerId == playerId);
+    public int PlayerCount() => _players.Count;
 }

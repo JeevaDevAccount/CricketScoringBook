@@ -14,8 +14,7 @@ public sealed class AppUnitOfWork : IUnitOfWork
         _context = context;
     }
 
-    public async Task SaveChangesAsync(
-        CancellationToken cancellationToken)
+    public async Task SaveChangesAsync(CancellationToken cancellationToken)
     {
         foreach (var entry in _context.ChangeTracker.Entries<Match>())
         {

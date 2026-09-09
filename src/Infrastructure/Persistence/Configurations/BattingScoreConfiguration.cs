@@ -4,13 +4,13 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Persistence.Configurations;
 
-public sealed class BattingScoreConfiguration
-    : IEntityTypeConfiguration<BattingScore>
+public sealed class BattingScoreConfiguration : IEntityTypeConfiguration<BattingScore>
 {
     public void Configure(EntityTypeBuilder<BattingScore> builder)
     {
         builder.ToTable("BattingScores");
 
+        // Shadow property for the foreign key reference
         builder.Property<Guid>("InningsId")
             .IsRequired();
 
@@ -29,10 +29,10 @@ public sealed class BattingScoreConfiguration
         builder.Property(x => x.Sixes)
             .IsRequired();
 
-        builder.HasKey(
-            "InningsId",
-            nameof(BattingScore.PlayerId));
+        // Composite primary key (Player per Innings)
+        builder.HasKey("InningsId", nameof(BattingScore.PlayerId));
 
+        // Complex value object property mapping for wickets/dismissals
         builder.ComplexProperty(
             x => x.Dismissal,
             dismissal =>
@@ -46,10 +46,7 @@ public sealed class BattingScoreConfiguration
                     .IsRequired(false);
             });
 
-        builder.HasOne<Innings>()
-            .WithMany(x => x.BattingScores)
-            .HasForeignKey("InningsId")
-            .IsRequired()
-            .OnDelete(DeleteBehavior.Cascade);
+        // 🌟 Sever the tracking loop by using an index instead of an upward .HasOne navigation
+        builder.HasIndex("InningsId");
     }
 }

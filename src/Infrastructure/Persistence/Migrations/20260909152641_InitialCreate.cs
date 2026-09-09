@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -12,28 +13,15 @@ namespace Infrastructure.Persistence.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "PlayingTeams",
-                columns: table => new
-                {
-                    TeamId = table.Column<int>(type: "integer", nullable: false),
-                    MatchId = table.Column<Guid>(type: "uuid", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PlayingTeams", x => new { x.MatchId, x.TeamId });
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Matches",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     ActiveScorerId = table.Column<int>(type: "integer", nullable: true),
+                    ConcurrencyVersion = table.Column<Guid>(type: "uuid", nullable: false),
                     MaxOvers = table.Column<int>(type: "integer", nullable: false),
                     Timestamp = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    Team1TeamId = table.Column<int>(type: "integer", nullable: false),
-                    Team2TeamId = table.Column<int>(type: "integer", nullable: false),
                     TossWonTeamId = table.Column<int>(type: "integer", nullable: true),
                     TeamBattingFirstId = table.Column<int>(type: "integer", nullable: true),
                     TeamBattingSecondId = table.Column<int>(type: "integer", nullable: true),
@@ -44,37 +32,6 @@ namespace Infrastructure.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Matches", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Matches_PlayingTeams_Id_Team1TeamId",
-                        columns: x => new { x.Id, x.Team1TeamId },
-                        principalTable: "PlayingTeams",
-                        principalColumns: new[] { "MatchId", "TeamId" },
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Matches_PlayingTeams_Id_Team2TeamId",
-                        columns: x => new { x.Id, x.Team2TeamId },
-                        principalTable: "PlayingTeams",
-                        principalColumns: new[] { "MatchId", "TeamId" },
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "PlayingTeamPlayers",
-                columns: table => new
-                {
-                    PlayerId = table.Column<int>(type: "integer", nullable: false),
-                    MatchId = table.Column<Guid>(type: "uuid", nullable: false),
-                    TeamId = table.Column<int>(type: "integer", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PlayingTeamPlayers", x => new { x.MatchId, x.TeamId, x.PlayerId });
-                    table.ForeignKey(
-                        name: "FK_PlayingTeamPlayers_PlayingTeams_MatchId_TeamId",
-                        columns: x => new { x.MatchId, x.TeamId },
-                        principalTable: "PlayingTeams",
-                        principalColumns: new[] { "MatchId", "TeamId" },
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -103,6 +60,42 @@ namespace Infrastructure.Persistence.Migrations
                     table.PrimaryKey("PK_Innings", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Innings_Matches_MatchId",
+                        column: x => x.MatchId,
+                        principalTable: "Matches",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MatchTeam1Details",
+                columns: table => new
+                {
+                    MatchId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TeamId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MatchTeam1Details", x => x.MatchId);
+                    table.ForeignKey(
+                        name: "FK_MatchTeam1Details_Matches_MatchId",
+                        column: x => x.MatchId,
+                        principalTable: "Matches",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MatchTeam2Details",
+                columns: table => new
+                {
+                    MatchId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TeamId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MatchTeam2Details", x => x.MatchId);
+                    table.ForeignKey(
+                        name: "FK_MatchTeam2Details_Matches_MatchId",
                         column: x => x.MatchId,
                         principalTable: "Matches",
                         principalColumn: "Id",
@@ -177,6 +170,44 @@ namespace Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "MatchTeam1Players",
+                columns: table => new
+                {
+                    PlayerId = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    MatchId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MatchTeam1Players", x => new { x.MatchId, x.PlayerId });
+                    table.ForeignKey(
+                        name: "FK_MatchTeam1Players_MatchTeam1Details_MatchId",
+                        column: x => x.MatchId,
+                        principalTable: "MatchTeam1Details",
+                        principalColumn: "MatchId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MatchTeam2Players",
+                columns: table => new
+                {
+                    PlayerId = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    MatchId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MatchTeam2Players", x => new { x.MatchId, x.PlayerId });
+                    table.ForeignKey(
+                        name: "FK_MatchTeam2Players_MatchTeam2Details_MatchId",
+                        column: x => x.MatchId,
+                        principalTable: "MatchTeam2Details",
+                        principalColumn: "MatchId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Deliveries",
                 columns: table => new
                 {
@@ -207,6 +238,16 @@ namespace Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_BattingScores_InningsId",
+                table: "BattingScores",
+                column: "InningsId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BowlingScores_InningsId",
+                table: "BowlingScores",
+                column: "InningsId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Deliveries_OverId",
                 table: "Deliveries",
                 column: "OverId");
@@ -215,18 +256,6 @@ namespace Infrastructure.Persistence.Migrations
                 name: "IX_Innings_MatchId_InningsNumber",
                 table: "Innings",
                 columns: new[] { "MatchId", "InningsNumber" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Matches_Id_Team1TeamId",
-                table: "Matches",
-                columns: new[] { "Id", "Team1TeamId" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Matches_Id_Team2TeamId",
-                table: "Matches",
-                columns: new[] { "Id", "Team2TeamId" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -249,19 +278,25 @@ namespace Infrastructure.Persistence.Migrations
                 name: "Deliveries");
 
             migrationBuilder.DropTable(
-                name: "PlayingTeamPlayers");
+                name: "MatchTeam1Players");
+
+            migrationBuilder.DropTable(
+                name: "MatchTeam2Players");
 
             migrationBuilder.DropTable(
                 name: "Overs");
+
+            migrationBuilder.DropTable(
+                name: "MatchTeam1Details");
+
+            migrationBuilder.DropTable(
+                name: "MatchTeam2Details");
 
             migrationBuilder.DropTable(
                 name: "Innings");
 
             migrationBuilder.DropTable(
                 name: "Matches");
-
-            migrationBuilder.DropTable(
-                name: "PlayingTeams");
         }
     }
 }
