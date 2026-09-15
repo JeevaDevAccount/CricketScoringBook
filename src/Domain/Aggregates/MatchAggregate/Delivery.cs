@@ -46,7 +46,8 @@ public sealed class Delivery
                 "Sequence number must be greater than zero.",
                 nameof(sequenceNumber));
 
-        if (ballNumberInOver <= 0)
+        bool isIllegalExtra = extraType == ExtraType.Wide || extraType == ExtraType.NoBall;
+        if (ballNumberInOver <= 0 && !isIllegalExtra)
             throw new ArgumentException(
                 "Ball number must be greater than zero.",
                 nameof(ballNumberInOver));
