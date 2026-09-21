@@ -31,50 +31,55 @@ public sealed class MatchQueries : IMatchQueries
             .SingleOrDefaultAsync(cancellationToken);
     }
 
-    public async Task<LiveMatchDto?> GetLiveMatchAsync(
-        Guid matchId,
-        CancellationToken cancellationToken)
+    public async Task<LiveMatchDto?> GetLiveMatchAsync(Guid matchId, CancellationToken cancellationToken)
     {
-        return await _context.Matches
+        // Fetch the raw query object target
+        var matchData = await _context.Matches
             .AsNoTracking()
             .Where(x => x.Id == matchId)
-            .Select(x => new LiveMatchDto(
+            .Select(x => new
+            {
                 x.Id,
                 x.Status,
-                x.Innings
-                    .OrderBy(i => i.InningsNumber)
-                    .Last().BattingTeamId,
-                x.Innings
-                    .OrderBy(i => i.InningsNumber)
-                    .Last().BowlingTeamId,
-                x.Innings
-                    .OrderBy(i => i.InningsNumber)
-                    .Last().TotalRuns,
-                x.Innings
-                    .OrderBy(i => i.InningsNumber)
-                    .Last().TargetRuns,
-                x.Innings
-                    .OrderBy(i => i.InningsNumber)
-                    .Last().Wickets,
-                x.Innings
-                    .OrderBy(i => i.InningsNumber)
-                    .Last().TotalBalls,
-                x.Innings
-                    .OrderBy(i => i.InningsNumber)
-                    .Last().CurrentStrikerId,
-                x.Innings
-                    .OrderBy(i => i.InningsNumber)
-                    .Last().CurrentNonStrikerId,
-                x.Innings
-                    .OrderBy(i => i.InningsNumber)
-                    .Last().CurrentBowlerId,
-                x.Innings
-                    .OrderBy(i => i.InningsNumber)
-                    .Last().Overs
-                    .OrderBy(o => o.OverNumber)
-                    .Last().OverNumber))
+                // Extract the last active innings row safely using LastOrDefault
+                LastInnings = x.Innings.OrderBy(i => i.InningsNumber).LastOrDefault()
+            })
             .SingleOrDefaultAsync(cancellationToken);
+
+        if (matchData is null)
+            return null;
+
+        int battingTeamId = matchData.LastInnings?.BattingTeamId ?? 0;
+        int bowlingTeamId = matchData.LastInnings?.BowlingTeamId ?? 0;
+        int totalRuns = matchData.LastInnings?.TotalRuns ?? 0;
+        int? targetRuns = matchData.LastInnings?.TargetRuns;
+        int wickets = matchData.LastInnings?.Wickets ?? 0;
+        int totalBalls = matchData.LastInnings?.TotalBalls ?? 0;
+        int currentStrikerId = matchData.LastInnings?.CurrentStrikerId ?? 0;
+        int currentNonStrikerId = matchData.LastInnings?.CurrentNonStrikerId ?? 0;
+        int currentBowlerId = matchData.LastInnings?.CurrentBowlerId ?? 0;
+
+        // Pull down the active current over index safely without indexing crashes
+        int currentOverNumber = matchData.LastInnings?.Overs
+            .OrderBy(o => o.OverNumber)
+            .LastOrDefault()?.OverNumber ?? 0;
+
+        return new LiveMatchDto(
+            matchData.Id,
+            matchData.Status,
+            battingTeamId,
+            bowlingTeamId,
+            totalRuns,
+            targetRuns,
+            wickets,
+            totalBalls,
+            currentStrikerId,
+            currentNonStrikerId,
+            currentOverNumber,
+            currentBowlerId
+        );
     }
+
 
     public async Task<ScorecardDto?> GetScorecardAsync(
         Guid matchId,

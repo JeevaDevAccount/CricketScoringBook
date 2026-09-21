@@ -7,7 +7,6 @@ public sealed class BowlingScore
 	public int Balls { get; private set; }
 	public int Maidens { get; private set; }
 	public int TotalWickets { get; private set; }
-	
 	public decimal Economy => Balls == 0 ? 0 : Math.Round((decimal)RunsConceded * 6 / Balls, 2);
 	
   private BowlingScore(){}
@@ -19,42 +18,41 @@ public sealed class BowlingScore
 	  PlayerId = playerId;
   }
   
-  public static BowlingScore Create(int playerId){
-	  return new BowlingScore(playerId);
+	public static BowlingScore Create(int playerId){
+		return new BowlingScore(playerId);
 	}
 	
-	public void RecordDelivery(int runsConceded, bool countAsBall, bool creditedWithWicket){
+	public void RecordDelivery(int runsConceded, bool countAsBall, bool creditedWithWicket)
+	{
 		if (runsConceded < 0)
-      throw new ArgumentOutOfRangeException(nameof(runsConceded), "Runs conceded cannot be negative.");
+      		throw new ArgumentOutOfRangeException(nameof(runsConceded), "Runs conceded cannot be negative.");
     
-    RunsConceded += runsConceded;
-    
-    if (countAsBall)
-	    Balls++;
-
-    if (creditedWithWicket)
-      TotalWickets++;
-    
-}
+		RunsConceded += runsConceded;
+		if (countAsBall)
+			Balls++;
+		if (creditedWithWicket)
+			TotalWickets++;
+	}
 	
-	public void UndoDelivery(int runsConceded, bool countAsBall, bool creditedWithWicket){
+	public void UndoDelivery(int runsConceded, bool countAsBall, bool creditedWithWicket)
+	{
 		if (runsConceded < 0)
-      throw new ArgumentOutOfRangeException(nameof(runsConceded), "Runs conceded cannot be negative.");
+      		throw new ArgumentOutOfRangeException(nameof(runsConceded), "Runs conceded cannot be negative.");
 
-    if (RunsConceded < runsConceded)
-      throw new InvalidOperationException("Invalid bowling state.");
+		if (RunsConceded < runsConceded)
+			throw new InvalidOperationException("Invalid bowling state.");
 
-    RunsConceded -= runsConceded;
+		RunsConceded -= runsConceded;
 
-    if (countAsBall)
-    {
-      if (Balls == 0)
-          throw new InvalidOperationException("Invalid batting state.");
-      Balls--;
-    }
+		if (countAsBall)
+		{
+			if (Balls == 0)
+				throw new InvalidOperationException("Invalid batting state.");
+			Balls--;
+		}
 
-    if (creditedWithWicket)
-      TotalWickets--;
+		if (creditedWithWicket)
+			TotalWickets--;
 	}
 	
 	public void RecordMaiden(){
@@ -63,7 +61,7 @@ public sealed class BowlingScore
 	
 	public void UndoMaiden(){
 		if (Maidens <= 0)
-      throw new InvalidOperationException("Invalid bowling state.");
+      		throw new InvalidOperationException("Invalid bowling state.");
 		Maidens--;
 	}
 }

@@ -24,7 +24,6 @@ public sealed class MatchConfiguration : IEntityTypeConfiguration<Match>
         builder.Property(x => x.WinnerTeamId).IsRequired(false);
         builder.Property(x => x.Result).IsRequired(false);
 
-        // 🌟 Team 1 Mapping: Clean, isolated table mapping
         builder.OwnsOne(x => x.Team1PlayingTeam, team1 =>
         {
             team1.ToTable("MatchTeam1Details"); // 👈 Distinct table name
@@ -37,7 +36,7 @@ public sealed class MatchConfiguration : IEntityTypeConfiguration<Match>
             {
                 player.ToTable("MatchTeam1Players"); // 👈 Distinct table name
                 player.WithOwner().HasForeignKey("MatchId");
-                player.HasKey("MatchId", nameof(PlayingTeamPlayer.PlayerId));
+                player.HasKey("MatchId", "PlayerId");
                 player.Property(x => x.PlayerId).IsRequired();
             });
 
@@ -50,10 +49,9 @@ public sealed class MatchConfiguration : IEntityTypeConfiguration<Match>
             .HasField("_team1PlayingTeam")
             .UsePropertyAccessMode(PropertyAccessMode.Field);
 
-        // 🌟 Team 2 Mapping: Clean, isolated table mapping
         builder.OwnsOne(x => x.Team2PlayingTeam, team2 =>
         {
-            team2.ToTable("MatchTeam2Details"); // 👈 Distinct table name
+            team2.ToTable("MatchTeam2Details");
             team2.WithOwner().HasForeignKey("MatchId");
             team2.HasKey("MatchId"); 
 
@@ -61,9 +59,9 @@ public sealed class MatchConfiguration : IEntityTypeConfiguration<Match>
 
             team2.OwnsMany(x => x.Players, player =>
             {
-                player.ToTable("MatchTeam2Players"); // 👈 Distinct table name
+                player.ToTable("MatchTeam2Players");
                 player.WithOwner().HasForeignKey("MatchId");
-                player.HasKey("MatchId", nameof(PlayingTeamPlayer.PlayerId));
+                player.HasKey("MatchId", "PlayerId");
                 player.Property(x => x.PlayerId).IsRequired();
             });
 

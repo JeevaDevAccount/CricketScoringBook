@@ -1,67 +1,28 @@
 using Application.Abstractions.Interfaces;
 using Application.Matches.Commands.MatchCommandHandlers;
 using Application.Matches.Commands.MatchCommands;
+using Domain.Enum;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebApi.Endpoints;
 
 public static class MatchesEndpoints
 {
-    public static void MapMatchesEndpoints(
-        this IEndpointRouteBuilder app)
+    public static void MapMatchesEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/matches")
-            .WithTags("Cricket Matches");
+        var group = app.MapGroup("/api/matches").WithTags("Cricket Matches");
 
-        // 1. Claim scorer (Binds Command directly from Body, patches MatchId from URL)
-        group.MapPost(
-            "/{matchId:guid}/scorer/claim",
-            async (
-                Guid matchId,
-                [FromBody] ClaimScorerCommand command,
-                ClaimScorerHandler handler,
-                CancellationToken cancellationToken) =>
-            {
-                await handler.Handle(
-                    command with { MatchId = matchId },
-                    cancellationToken);
+        // 0. Create Match -> Initializes a brand new match row in the database
+        group.MapPost("", async (
+            [FromBody] CreateMatchCommand command,
+            CreateMatchHandler handler,
+            CancellationToken cancellationToken) =>
+        {
+            Guid matchId = await handler.Handle(command, cancellationToken);
+            return Results.CreatedAtRoute("GetLiveMatch", new { matchId = matchId }, new { Id = matchId });
+        });
 
-                return Results.NoContent();
-            });
-
-        // 2. Change scorer
-        group.MapPost(
-            "/{matchId:guid}/scorer/change",
-            async (
-                Guid matchId,
-                [FromBody] ChangeScorerCommand command,
-                ChangeScorerHandler handler,
-                CancellationToken cancellationToken) =>
-            {
-                await handler.Handle(
-                    command with { MatchId = matchId },
-                    cancellationToken);
-
-                return Results.NoContent();
-            });
-
-        // 3. Record toss
-        group.MapPost(
-            "/{matchId:guid}/toss",
-            async (
-                Guid matchId,
-                [FromBody] RecordTossCommand command,
-                RecordTossHandler handler,
-                CancellationToken cancellationToken) =>
-            {
-                await handler.Handle(
-                    command with { MatchId = matchId },
-                    cancellationToken);
-
-                return Results.NoContent();
-            });
-
-        // 4. Start match (No Body needed, instantiates using purely the URL Guid)
+        // 1. Start match (No Body needed, instantiates using purely the URL Guid)
         group.MapPost(
             "/{matchId:guid}/start",
             async (
@@ -76,19 +37,75 @@ public static class MatchesEndpoints
                 return Results.NoContent();
             });
 
+        // 2. Claim scorer (Clean route extraction)
+        group.MapPost(
+            "/{matchId:guid}/scorer/claim",
+            async (
+                Guid matchId,
+                [FromBody] ClaimScorerBody body,
+                ClaimScorerHandler handler,
+                CancellationToken cancellationToken) =>
+            {
+                await handler.Handle(
+                    new ClaimScorerCommand(matchId, body.ScorerId),
+                    cancellationToken);
+
+                return Results.NoContent();
+            });
+
+        // 3. Change scorer
+        group.MapPost(
+            "/{matchId:guid}/scorer/change",
+            async (
+                Guid matchId,
+                [FromBody] ChangeScorerBody body,
+                ChangeScorerHandler handler,
+                CancellationToken cancellationToken) =>
+            {
+                await handler.Handle(
+                    new ChangeScorerCommand(matchId, body.ScorerId),
+                    cancellationToken);
+
+                return Results.NoContent();
+            });
+
+        // 4. Record toss
+        group.MapPost(
+        "/{matchId:guid}/toss",
+        async (
+            Guid matchId,
+            [FromBody] RecordTossBody body, 
+            RecordTossHandler handler,
+            CancellationToken cancellationToken) =>
+        {
+            var command = new RecordTossCommand(
+                matchId,
+                body.TossWonTeamId,
+                body.Decision ?? InningsDecision.Bat 
+            );
+
+            await handler.Handle(command, cancellationToken);
+
+            return Results.NoContent();
+        });
+
         // 5. Start innings
         group.MapPost(
             "/{matchId:guid}/innings/start",
             async (
                 Guid matchId,
-                [FromBody] StartInningsCommand command,
+                [FromBody] StartInningsBody body,
                 StartInningsHandler handler,
                 CancellationToken cancellationToken) =>
             {
-                await handler.Handle(
-                    command with { MatchId = matchId },
-                    cancellationToken);
+                var command = new StartInningsCommand(
+                    matchId,
+                    body.StrikerId,
+                    body.NonStrikerId,
+                    body.BowlerId
+                );
 
+                await handler.Handle(command, cancellationToken);
                 return Results.NoContent();
             });
 
@@ -97,14 +114,23 @@ public static class MatchesEndpoints
             "/{matchId:guid}/deliveries",
             async (
                 Guid matchId,
-                [FromBody] RecordDeliveryCommand command,
+                [FromBody] RecordDeliveryBody body,
                 RecordDeliveryHandler handler,
                 CancellationToken cancellationToken) =>
             {
-                await handler.Handle(
-                    command with { MatchId = matchId },
-                    cancellationToken);
+                var command = new RecordDeliveryCommand(
+                    matchId,
+                    body.StrikerId,
+                    body.NonStrikerId,
+                    body.BowlerId,
+                    body.BatterRuns,
+                    body.TotalRuns,
+                    body.ExtraType,
+                    body.Dismissal,
+                    body.DismissedPlayerId
+                );
 
+                await handler.Handle(command, cancellationToken);
                 return Results.NoContent();
             });
 
@@ -129,12 +155,15 @@ public static class MatchesEndpoints
             async (
                 Guid matchId,
                 int teamId,
-                [FromBody] AddPlayerToPlayingTeamCommand command,
+                [FromBody] AddPlayerBody body,
                 AddPlayerToPlayingTeamHandler handler,
                 CancellationToken cancellationToken) =>
             {
                 await handler.Handle(
-                    command with { MatchId = matchId, TeamId = teamId },
+                    new AddPlayerToPlayingTeamCommand(
+                        matchId,
+                        teamId,
+                        body.PlayerId),
                     cancellationToken);
 
                 return Results.NoContent();
@@ -192,4 +221,30 @@ public static class MatchesEndpoints
                     : Results.Ok(result);
             });
     }
+}
+
+public sealed record ClaimScorerBody(int ScorerId);
+public sealed record ChangeScorerBody(int ScorerId);
+public sealed class RecordTossBody
+{
+    public int TossWonTeamId { get; set; }
+    public InningsDecision? Decision { get; set; } 
+}
+public sealed record AddPlayerBody(int PlayerId);
+public sealed class StartInningsBody
+{
+    public int StrikerId { get; set; }
+    public int NonStrikerId { get; set; }
+    public int BowlerId { get; set; }
+}
+public sealed class RecordDeliveryBody
+{
+    public int StrikerId { get; set; }
+    public int NonStrikerId { get; set; }
+    public int BowlerId { get; set; }
+    public int BatterRuns { get; set; }
+    public int TotalRuns { get; set; }
+    public ExtraType ExtraType { get; set; }
+    public Domain.Aggregates.MatchAggregate.Dismissal Dismissal { get; set; } = null!; 
+    public int? DismissedPlayerId { get; set; }
 }

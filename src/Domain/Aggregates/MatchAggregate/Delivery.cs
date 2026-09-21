@@ -17,17 +17,10 @@ public sealed class Delivery
     public int? DismissedPlayerId { get; private set; }
     public DateTime Timestamp { get; private set; }
 
-    public bool IsWicket =>
-        Dismissal is not null &&
-        Dismissal.WicketType != WicketType.None;
+    public bool IsWicket => Dismissal is not null && Dismissal.WicketType != WicketType.None;
+    public bool IsLegal => ExtraType != ExtraType.Wide && ExtraType != ExtraType.NoBall;
 
-    public bool IsLegal =>
-        ExtraType != ExtraType.Wide &&
-        ExtraType != ExtraType.NoBall;
-
-    private Delivery()
-    {
-    }
+    private Delivery() {}
 
     private Delivery(
         int sequenceNumber,
@@ -42,80 +35,55 @@ public sealed class Delivery
         int? dismissedPlayerId)
     {
         if (sequenceNumber <= 0)
-            throw new ArgumentException(
-                "Sequence number must be greater than zero.",
-                nameof(sequenceNumber));
+            throw new ArgumentException("Sequence number must be greater than zero.",nameof(sequenceNumber));
 
         bool isIllegalExtra = extraType == ExtraType.Wide || extraType == ExtraType.NoBall;
+
         if (ballNumberInOver <= 0 && !isIllegalExtra)
-            throw new ArgumentException(
-                "Ball number must be greater than zero.",
-                nameof(ballNumberInOver));
+            throw new ArgumentException("Ball number must be greater than zero.",nameof(ballNumberInOver));
 
         if (strikerId <= 0)
-            throw new ArgumentException(
-                "Invalid striker.",
-                nameof(strikerId));
+            throw new ArgumentException("Invalid striker.",nameof(strikerId));
 
         if (nonStrikerId <= 0)
-            throw new ArgumentException(
-                "Invalid non-striker.",
-                nameof(nonStrikerId));
+            throw new ArgumentException("Invalid non-striker.",nameof(nonStrikerId));
 
         if (bowlerId <= 0)
-            throw new ArgumentException(
-                "Invalid bowler.",
-                nameof(bowlerId));
+            throw new ArgumentException("Invalid bowler.",nameof(bowlerId));
 
         if (strikerId == nonStrikerId)
-            throw new ArgumentException(
-                "Striker and non-striker cannot be the same.");
+            throw new ArgumentException("Striker and non-striker cannot be the same.");
 
         if (batterRuns < 0)
-            throw new ArgumentException(
-                "Batter runs cannot be negative.",
-                nameof(batterRuns));
+            throw new ArgumentException("Batter runs cannot be negative.",nameof(batterRuns));
 
         if (totalRuns < 0)
-            throw new ArgumentException(
-                "Total runs cannot be negative.",
-                nameof(totalRuns));
+            throw new ArgumentException("Total runs cannot be negative.",nameof(totalRuns));
 
         if (totalRuns < batterRuns)
-            throw new ArgumentException(
-                "Total runs cannot be less than batter runs.",
-                nameof(totalRuns));
+            throw new ArgumentException("Total runs cannot be less than batter runs.",nameof(totalRuns));
 
         if (dismissal is null && dismissedPlayerId.HasValue)
         {
-            throw new ArgumentException(
-                "Dismissed player cannot be specified without a wicket.",
-                nameof(dismissedPlayerId));
+            throw new ArgumentException("Dismissed player cannot be specified without a wicket.",nameof(dismissedPlayerId));
         }
 
         if (dismissal is not null && !dismissedPlayerId.HasValue)
         {
-            throw new ArgumentException(
-                "Dismissed player is required when a wicket is recorded.",
-                nameof(dismissedPlayerId));
+            throw new ArgumentException("Dismissed player is required when a wicket is recorded.",nameof(dismissedPlayerId));
         }
 
         Id = Guid.NewGuid();
-
         SequenceNumber = sequenceNumber;
         BallNumberInOver = ballNumberInOver;
-
         StrikerId = strikerId;
         NonStrikerId = nonStrikerId;
         BowlerId = bowlerId;
-
         BatterRuns = batterRuns;
         TotalRuns = totalRuns;
-
         ExtraType = extraType;
         Dismissal = dismissal;
         DismissedPlayerId = dismissedPlayerId;
-
         Timestamp = DateTime.UtcNow;
     }
 

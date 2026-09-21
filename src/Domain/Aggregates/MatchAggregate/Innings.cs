@@ -20,27 +20,16 @@ public sealed class Innings
     public int CurrentBowlerId { get; private set; }
 
     public bool IsCompleted { get; private set; }
-
     public int SuperOverNumber { get; private set; }
-
     private readonly List<Over> _overs = [];
-
-    public IReadOnlyCollection<Over> Overs =>
-        _overs.AsReadOnly();
-
-    private Over CurrentOver =>
-        _overs[^1];
-
+    public IReadOnlyCollection<Over> Overs => _overs.AsReadOnly();
+    private Over CurrentOver => _overs.OrderBy(x => x.OverNumber).Last();
     private readonly List<BattingScore> _battingScores = [];
     private readonly List<BowlingScore> _bowlingScores = [];
-
     public IReadOnlyCollection<BattingScore> BattingScores => _battingScores.AsReadOnly();
-
     public IReadOnlyCollection<BowlingScore> BowlingScores => _bowlingScores.AsReadOnly();
 
-    private Innings()
-    {
-    }
+    private Innings(){}
 
     private Innings(
         int inningsNumber,
@@ -55,62 +44,40 @@ public sealed class Innings
         int currentBowlerId)
     {
         if (inningsNumber <= 0)
-            throw new ArgumentException(
-                "Innings number must be greater than zero.",
-                nameof(inningsNumber));
+            throw new ArgumentException("Innings number must be greater than zero.",nameof(inningsNumber));
 
         if (battingTeamId <= 0)
-            throw new ArgumentException(
-                "Invalid batting team.",
-                nameof(battingTeamId));
+            throw new ArgumentException("Invalid batting team.",nameof(battingTeamId));
 
         if (bowlingTeamId <= 0)
-            throw new ArgumentException(
-                "Invalid bowling team.",
-                nameof(bowlingTeamId));
+            throw new ArgumentException("Invalid bowling team.",nameof(bowlingTeamId));
 
         if (battingTeamId == bowlingTeamId)
-            throw new ArgumentException(
-                "Batting and bowling team cannot be the same.");
+            throw new ArgumentException("Batting and bowling team cannot be the same.");
 
         if (currentStrikerId <= 0)
-            throw new ArgumentException(
-                "Invalid striker.",
-                nameof(currentStrikerId));
+            throw new ArgumentException("Invalid striker.",nameof(currentStrikerId));
 
         if (currentNonStrikerId <= 0)
-            throw new ArgumentException(
-                "Invalid non-striker.",
-                nameof(currentNonStrikerId));
+            throw new ArgumentException("Invalid non-striker.",nameof(currentNonStrikerId));
 
         if (currentBowlerId <= 0)
-            throw new ArgumentException(
-                "Invalid bowler.",
-                nameof(currentBowlerId));
+            throw new ArgumentException("Invalid bowler.",nameof(currentBowlerId));
 
         if (currentStrikerId == currentNonStrikerId)
-            throw new ArgumentException(
-                "Striker and non-striker cannot be the same.");
+            throw new ArgumentException("Striker and non-striker cannot be the same.");
 
         if (!System.Enum.IsDefined(typeof(InningsType), type))
-            throw new ArgumentException(
-                "Invalid innings type.",
-                nameof(type));
+            throw new ArgumentException("Invalid innings type.",nameof(type));
 
         if (maxOvers <= 0)
-            throw new ArgumentException(
-                "Maximum overs must be greater than zero.",
-                nameof(maxOvers));
+            throw new ArgumentException("Maximum overs must be greater than zero.",nameof(maxOvers));
 
         if (targetRuns.HasValue && targetRuns.Value <= 0)
-            throw new ArgumentException(
-                "Target runs must be greater than zero.",
-                nameof(targetRuns));
+            throw new ArgumentException("Target runs must be greater than zero.",nameof(targetRuns));
 
         if (superOverNumber < 0)
-            throw new ArgumentException(
-                "Super over number cannot be negative.",
-                nameof(superOverNumber));
+            throw new ArgumentException("Super over number cannot be negative.",nameof(superOverNumber));
 
         Id = Guid.NewGuid();
 
@@ -160,51 +127,37 @@ public sealed class Innings
             throw new ArgumentNullException(nameof(input));
 
         if (IsCompleted)
-            throw new InvalidOperationException(
-                "The innings has already been completed.");
+            throw new InvalidOperationException("The innings has already been completed.");
 
         ValidateDelivery(input);
 
         Delivery delivery = CurrentOver.AddDelivery(input);
+        BattingScore battingScore = GetOrCreateBattingScore(delivery.StrikerId);
+        BowlingScore bowlingScore = GetOrCreateBowlingScore(delivery.BowlerId);
 
-        BattingScore battingScore =
-            GetOrCreateBattingScore(delivery.StrikerId);
+        battingScore.RecordDelivery(delivery.BatterRuns,delivery.IsLegal,delivery.Dismissal);
 
-        BowlingScore bowlingScore =
-            GetOrCreateBowlingScore(delivery.BowlerId);
+        bool creditedWithWicket = IsWicketCreditedToBowler(delivery);
+        int bowlerRunsConceded = delivery.BatterRuns + BowlerExtraRuns(delivery);
 
-        battingScore.RecordDelivery(
-            delivery.BatterRuns,
-            delivery.IsLegal,
-            delivery.Dismissal);
-
-        bool creditedWithWicket =
-            IsWicketCreditedToBowler(delivery);
-
-        int bowlerRunsConceded =
-            delivery.BatterRuns +
-            BowlerExtraRuns(delivery);
-
-        bowlingScore.RecordDelivery(
-            bowlerRunsConceded,
-            delivery.IsLegal,
-            creditedWithWicket);
+        bowlingScore.RecordDelivery(bowlerRunsConceded,delivery.IsLegal,creditedWithWicket);
 
         UpdateScore(delivery);
-
         RotateStrikeForRuns(delivery);
 
         if (CurrentOver.IsCompleted)
         {
             RotateStrikeAtEndOfOver();
-
             if (CurrentOver.IsMaiden)
                 bowlingScore.RecordMaiden();
 
             CheckInningsCompletion();
 
             if (!IsCompleted)
+            {
                 CreateNextOver();
+                this.CurrentBowlerId = 0;
+            }   
         }
         else
         {
@@ -215,43 +168,24 @@ public sealed class Innings
     public void UndoLastDelivery()
     {
         RemoveEmptyCurrentOver();
-
         Over overToUndo = GetOverToUndo();
-
         bool wasOverCompleted = overToUndo.IsCompleted;
         bool wasMaiden = overToUndo.IsMaiden;
-
         Delivery removedDelivery = overToUndo.UndoLastDelivery();
 
         if (wasOverCompleted)
             RotateStrikeAtEndOfOver();
 
         RotateStrikeForRuns(removedDelivery);
-
         UndoScore(removedDelivery);
 
-        BattingScore battingScore =
-            GetOrCreateBattingScore(removedDelivery.StrikerId);
+        BattingScore battingScore = GetOrCreateBattingScore(removedDelivery.StrikerId);
+        BowlingScore bowlingScore = GetOrCreateBowlingScore(removedDelivery.BowlerId);
+        battingScore.UndoDelivery(removedDelivery.BatterRuns,removedDelivery.IsLegal,removedDelivery.Dismissal);
+        int bowlerRunsConceded = removedDelivery.BatterRuns + BowlerExtraRuns(removedDelivery);
+        bool creditedWithWicket = IsWicketCreditedToBowler(removedDelivery);
 
-        BowlingScore bowlingScore =
-            GetOrCreateBowlingScore(removedDelivery.BowlerId);
-
-        battingScore.UndoDelivery(
-            removedDelivery.BatterRuns,
-            removedDelivery.IsLegal,
-            removedDelivery.Dismissal);
-
-        int bowlerRunsConceded =
-            removedDelivery.BatterRuns +
-            BowlerExtraRuns(removedDelivery);
-
-        bool creditedWithWicket =
-            IsWicketCreditedToBowler(removedDelivery);
-
-        bowlingScore.UndoDelivery(
-            bowlerRunsConceded,
-            removedDelivery.IsLegal,
-            creditedWithWicket);
+        bowlingScore.UndoDelivery(bowlerRunsConceded,removedDelivery.IsLegal,creditedWithWicket);
 
         if (wasMaiden)
             bowlingScore.UndoMaiden();
@@ -266,21 +200,18 @@ public sealed class Innings
         if (CurrentOver.Deliveries.Any())
         {
             if (!CurrentOver.IsEditable)
-                throw new InvalidOperationException(
-                    "Current over is locked for editing.");
+                throw new InvalidOperationException("Current over is locked for editing.");
 
             return CurrentOver;
         }
 
         if (_overs.Count < 2)
-            throw new InvalidOperationException(
-                "No delivery available to undo.");
+            throw new InvalidOperationException("No delivery available to undo.");
 
         Over previousOver = _overs[^2];
 
         if (!previousOver.IsEditable)
-            throw new InvalidOperationException(
-                "Previous over is locked for editing.");
+            throw new InvalidOperationException("Previous over is locked for editing.");
 
         return previousOver;
     }
@@ -314,9 +245,18 @@ public sealed class Innings
 
     private void RotateStrikeForRuns(Delivery delivery)
     {
-        if (delivery.BatterRuns % 2 != 0 ||
-            (delivery.BatterRuns == 0 &&
-             delivery.TotalRuns % 2 != 0))
+        int physicalRunsTaken = 0;
+
+        if (delivery.ExtraType == ExtraType.Wide || delivery.ExtraType == ExtraType.NoBall)
+        {
+            physicalRunsTaken = delivery.TotalRuns - 1;
+        }
+        else
+        {
+            physicalRunsTaken = delivery.TotalRuns;
+        }
+
+        if (physicalRunsTaken % 2 != 0)
         {
             SwapStrike();
         }
@@ -332,16 +272,16 @@ public sealed class Innings
     public void ChangeBowler(int bowlerId)
     {
         if (bowlerId <= 0)
-            throw new ArgumentException(
-                "Invalid bowler.",
-                nameof(bowlerId));
+            throw new ArgumentException("Invalid bowler.",nameof(bowlerId));
 
         CurrentBowlerId = bowlerId;
     }
 
     private void CreateNextOver()
     {
-        _overs.Add(Over.Create(_overs.Count + 1));
+        int nextOverNumber = _overs.Max(x => x.OverNumber) + 1;
+        _overs.Add(Over.Create(nextOverNumber));
+
     }
 
     private void RemoveEmptyCurrentOver()
@@ -349,23 +289,28 @@ public sealed class Innings
         if (_overs.Count <= 1)
             return;
 
+        Over currentOver = CurrentOver;
+
         if (!CurrentOver.Deliveries.Any())
-            _overs.RemoveAt(_overs.Count - 1);
+            _overs.Remove(currentOver);
     }
 
     private void ValidateDelivery(Match.DeliveryInput input)
     {
         if (input.StrikerId != CurrentStrikerId)
-            throw new InvalidOperationException(
-                "Delivery striker does not match the current striker.");
+            throw new InvalidOperationException("Delivery striker does not match the current striker.");
 
         if (input.NonStrikerId != CurrentNonStrikerId)
-            throw new InvalidOperationException(
-                "Delivery non-striker does not match the current non-striker.");
+            throw new InvalidOperationException("Delivery non-striker does not match the current non-striker.");
 
-        if (input.BowlerId != CurrentBowlerId)
-            throw new InvalidOperationException(
-                "Delivery bowler does not match the current bowler.");
+        if (CurrentBowlerId == 0)
+        {
+            this.CurrentBowlerId = input.BowlerId;
+        }
+        else if (input.BowlerId != CurrentBowlerId)
+        {
+            throw new InvalidOperationException("Delivery bowler does not match the current bowler.");   
+        }
     }
 
     private BattingScore GetOrCreateBattingScore(int playerId)
@@ -422,25 +367,17 @@ public sealed class Innings
         int incomingBatterId)
     {
         if (dismissedPlayerId <= 0)
-            throw new ArgumentException(
-                "Invalid dismissed player.",
-                nameof(dismissedPlayerId));
+            throw new ArgumentException("Invalid dismissed player.",nameof(dismissedPlayerId));
 
         if (incomingBatterId <= 0)
-            throw new ArgumentException(
-                "Invalid incoming batter.",
-                nameof(incomingBatterId));
+            throw new ArgumentException("Invalid incoming batter.",nameof(incomingBatterId));
 
         if (dismissedPlayerId == incomingBatterId)
-            throw new ArgumentException(
-                "Incoming batter cannot be the dismissed batter.",
-                nameof(incomingBatterId));
+            throw new ArgumentException("Incoming batter cannot be the dismissed batter.",nameof(incomingBatterId));
 
-        if (CurrentStrikerId == incomingBatterId ||
-            CurrentNonStrikerId == incomingBatterId)
+        if (CurrentStrikerId == incomingBatterId || CurrentNonStrikerId == incomingBatterId)
         {
-            throw new InvalidOperationException(
-                "Incoming batter is already on the field.");
+            throw new InvalidOperationException("Incoming batter is already on the field.");
         }
 
         if (CurrentStrikerId == dismissedPlayerId)
@@ -455,8 +392,7 @@ public sealed class Innings
             return;
         }
 
-        throw new InvalidOperationException(
-            "Dismissed player is not one of the current batters.");
+        throw new InvalidOperationException("Dismissed player is not one of the current batters.");
     }
 
     private void UndoDismissedBatter(Delivery delivery)
@@ -465,11 +401,9 @@ public sealed class Innings
             return;
 
         if (!delivery.DismissedPlayerId.HasValue)
-            throw new InvalidOperationException(
-                "Dismissed player is missing for a wicket.");
+            throw new InvalidOperationException("Dismissed player is missing for a wicket.");
 
-        int dismissedPlayerId =
-            delivery.DismissedPlayerId.Value;
+        int dismissedPlayerId = delivery.DismissedPlayerId.Value;
 
         if (delivery.StrikerId == dismissedPlayerId)
         {
@@ -483,8 +417,7 @@ public sealed class Innings
             return;
         }
 
-        throw new InvalidOperationException(
-            "Unable to restore dismissed batter.");
+        throw new InvalidOperationException("Unable to restore dismissed batter.");
     }
 
     private void CheckInningsCompletion()
@@ -495,8 +428,7 @@ public sealed class Innings
             return;
         }
 
-        if (TargetRuns.HasValue &&
-            TotalRuns >= TargetRuns.Value)
+        if (TargetRuns.HasValue && TotalRuns >= TargetRuns.Value)
         {
             IsCompleted = true;
             return;

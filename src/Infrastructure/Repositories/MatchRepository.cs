@@ -14,24 +14,25 @@ public sealed class MatchRepository : IMatchRepository
         _context = context;
     }
 
+    public void Add(Match match)
+    {
+        _context.Matches.Add(match);
+    }
     public async Task<Match?> GetByIdAsync(
         Guid matchId,
         CancellationToken cancellationToken)
     {
         return await _context.Matches
-            // Team 1 + Players
             .Include(x => x.Team1PlayingTeam)
-                .ThenInclude(x => x.Players)
-
-            // Team 2 + Players
             .Include(x => x.Team2PlayingTeam)
-                .ThenInclude(x => x.Players)
-
-            // Innings + Overs + Deliveries
             .Include(x => x.Innings)
                 .ThenInclude(x => x.Overs)
                     .ThenInclude(x => x.Deliveries)
+            .Include(x => x.Innings)
+                .ThenInclude(x => x.BattingScores)
 
+            .Include(x => x.Innings)
+                .ThenInclude(x => x.BowlingScores)
             .SingleOrDefaultAsync(
                 x => x.Id == matchId,
                 cancellationToken);

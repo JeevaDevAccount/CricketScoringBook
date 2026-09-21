@@ -80,6 +80,36 @@ public sealed class RecordTossHandler
     }
 }
 
+public sealed class CreateMatchHandler
+{
+    private readonly IMatchRepository _matchRepository;
+    private readonly IUnitOfWork _unitOfWork;
+
+    public CreateMatchHandler(IMatchRepository matchRepository, IUnitOfWork unitOfWork)
+    {
+        _matchRepository = matchRepository;
+        _unitOfWork = unitOfWork;
+    }
+
+    public async Task<Guid> Handle(CreateMatchCommand command, CancellationToken cancellationToken)
+    {
+        // 🌟 Use your factory method to build the rich domain instance
+        var match = Match.Create(
+            command.Team1Id,
+            command.Team2Id,
+            command.MaxOvers);
+
+        // Track the entity inside your DbContext unit tracking map
+        _matchRepository.Add(match);
+
+        // Commit the transaction to assign the tracking Guid
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Return the fresh ID so the user/client can grab it for subsequent calls
+        return match.Id;
+    }
+}
+
 public sealed class StartMatchHandler
 {
     private readonly IMatchRepository _matchRepository;

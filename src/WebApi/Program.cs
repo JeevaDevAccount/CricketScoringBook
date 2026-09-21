@@ -8,20 +8,19 @@ using WebApi.RealTime;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
-builder.Services.AddProblemDetails();
+//builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+//builder.Services.AddProblemDetails();
 
 builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddSignalR();
 
-builder.Services.AddScoped<
-    IMatchUpdateNotifier,
-    SignalRMatchUpdateNotifier>();
+builder.Services.AddScoped<IMatchUpdateNotifier,SignalRMatchUpdateNotifier>();
 
 builder.Services.AddScoped<ClaimScorerHandler>();
 builder.Services.AddScoped<ChangeScorerHandler>();
 builder.Services.AddScoped<RecordTossHandler>();
+builder.Services.AddScoped<CreateMatchHandler>();
 builder.Services.AddScoped<StartMatchHandler>();
 builder.Services.AddScoped<StartInningsHandler>();
 builder.Services.AddScoped<RecordDeliveryHandler>();
@@ -33,7 +32,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-app.UseExceptionHandler();
+//app.UseExceptionHandler();
 
 app.UseSwagger();
 app.UseSwaggerUI();

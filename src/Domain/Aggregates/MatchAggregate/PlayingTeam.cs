@@ -4,13 +4,10 @@ public sealed class PlayingTeam
 {
     private const int MaximumPlayers = 11;
     private readonly List<PlayingTeamPlayer> _players = [];
-
-    // 🌟 THE PERMANENT DOMAIN FIX: Composite identity properties
     public Guid MatchId { get; private set; }
-    public int TeamId { get; }
+    public int TeamId { get; private set;}
 
-    public IReadOnlyCollection<PlayingTeamPlayer> Players =>
-        _players.AsReadOnly();
+    public IReadOnlyCollection<PlayingTeamPlayer> Players => _players.AsReadOnly();
 
     private PlayingTeam() { }
 
