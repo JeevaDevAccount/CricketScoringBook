@@ -31,7 +31,7 @@ public sealed class Delivery
         int batterRuns,
         int totalRuns,
         ExtraType extraType,
-        Dismissal? dismissal,
+        Dismissal dismissal,
         int? dismissedPlayerId)
     {
         if (sequenceNumber <= 0)
@@ -63,12 +63,12 @@ public sealed class Delivery
         if (totalRuns < batterRuns)
             throw new ArgumentException("Total runs cannot be less than batter runs.",nameof(totalRuns));
 
-        if (dismissal is null && dismissedPlayerId.HasValue)
+        if (dismissal.WicketType == WicketType.None && dismissedPlayerId.HasValue)
         {
             throw new ArgumentException("Dismissed player cannot be specified without a wicket.",nameof(dismissedPlayerId));
         }
 
-        if (dismissal is not null && !dismissedPlayerId.HasValue)
+        if (dismissal.WicketType != WicketType.None && !dismissedPlayerId.HasValue)
         {
             throw new ArgumentException("Dismissed player is required when a wicket is recorded.",nameof(dismissedPlayerId));
         }

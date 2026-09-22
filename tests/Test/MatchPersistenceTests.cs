@@ -172,7 +172,8 @@ public async Task Match_WithDelivery_PersistsAndReloadsCorrectly()
             TotalRuns: 4,
             ExtraType: ExtraType.None,
             Dismissal: null!,
-            DismissedPlayerId: null);
+            DismissedPlayerId: null,
+            IncomingBatterId: null);
 
         match.RecordDelivery(delivery);
 
@@ -236,7 +237,8 @@ public async Task Match_WithBattingAndBowlingScores_PersistsAndReloadsCorrectly(
             TotalRuns: 4,
             ExtraType: ExtraType.None,
             Dismissal: null!,
-            DismissedPlayerId: null);
+            DismissedPlayerId: null,
+            IncomingBatterId: null);
 
         match.RecordDelivery(delivery);
 
@@ -311,7 +313,8 @@ public async Task CompleteMatchAggregate_PersistsAndReloadsCorrectly()
                 TotalRuns: 4,
                 ExtraType: ExtraType.None,
                 Dismissal: null!,
-                DismissedPlayerId: null));
+                DismissedPlayerId: null,
+                IncomingBatterId: null));
 
         // Delivery 2 - 1 run
         match.RecordDelivery(
@@ -323,7 +326,8 @@ public async Task CompleteMatchAggregate_PersistsAndReloadsCorrectly()
                 TotalRuns: 1,
                 ExtraType: ExtraType.None,
                 Dismissal: null!,
-                DismissedPlayerId: null));
+                DismissedPlayerId: null,
+                IncomingBatterId: null));
 
         // Delivery 3 - dot ball
         match.RecordDelivery(
@@ -335,7 +339,8 @@ public async Task CompleteMatchAggregate_PersistsAndReloadsCorrectly()
                 TotalRuns: 0,
                 ExtraType: ExtraType.None,
                 Dismissal: null!,
-                DismissedPlayerId: null));
+                DismissedPlayerId: null,
+                IncomingBatterId: null));
 
         // Act
         await SaveMatchAsync(options, match);

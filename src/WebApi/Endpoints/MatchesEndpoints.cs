@@ -126,8 +126,10 @@ public static class MatchesEndpoints
                     body.BatterRuns,
                     body.TotalRuns,
                     body.ExtraType,
-                    body.Dismissal,
-                    body.DismissedPlayerId
+                    body.WicketType,
+                    body.FielderId,
+                    body.DismissedPlayerId,
+                    body.IncomingBatterId
                 );
 
                 await handler.Handle(command, cancellationToken);
@@ -245,6 +247,8 @@ public sealed class RecordDeliveryBody
     public int BatterRuns { get; set; }
     public int TotalRuns { get; set; }
     public ExtraType ExtraType { get; set; }
-    public Domain.Aggregates.MatchAggregate.Dismissal Dismissal { get; set; } = null!; 
+    public WicketType WicketType { get; set; } 
+    public int? FielderId { get; set; }
     public int? DismissedPlayerId { get; set; }
+    public int? IncomingBatterId { get; set; } 
 }

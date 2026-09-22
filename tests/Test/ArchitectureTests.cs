@@ -1,17 +1,18 @@
 using NetArchTest.Rules;
-using Xunit;
 
-// Type pointers to resolve targeted assemblies cleanly
-using DomainAssembly = Domain.Aggregates.MatchAggregate.Match;
-using ApplicationAssembly = Application.Matches.Commands.MatchCommands.ClaimScorerCommand;
-using InfrastructureAssembly = Infrastructure.Persistence.AppDbContext;
+using DomainAssembly =
+    Domain.Aggregates.MatchAggregate.Match;
 
-namespace tests.Architecture;
+using ApplicationAssembly =
+    Application.Matches.Commands.MatchCommands.ClaimScorerCommand;
+
+using InfrastructureAssembly =
+    Infrastructure.Persistence.AppDbContext;
+
+namespace tests.Test;
 
 public sealed class ArchitectureTests
 {
-    // Define clean constants matching your actual project namespaces to prevent string typos
-    private const string DomainNamespace = "Domain";
     private const string ApplicationNamespace = "Application";
     private const string InfrastructureNamespace = "Infrastructure";
     private const string WebApiNamespace = "WebApi";
@@ -25,7 +26,9 @@ public sealed class ArchitectureTests
             .HaveDependencyOn(ApplicationNamespace)
             .GetResult();
 
-        Assert.True(result.IsSuccessful, $"Domain types leak into Application: {string.Join(", ", result.FailingTypes ?? [])}");
+        AssertArchitectureRule(
+            result,
+            "Domain must not depend on Application.");
     }
 
     [Fact]
@@ -37,11 +40,13 @@ public sealed class ArchitectureTests
             .HaveDependencyOn(InfrastructureNamespace)
             .GetResult();
 
-        Assert.True(result.IsSuccessful, $"Domain types leak into Infrastructure: {string.Join(", ", result.FailingTypes ?? [])}");
+        AssertArchitectureRule(
+            result,
+            "Domain must not depend on Infrastructure.");
     }
 
     [Fact]
-    public void Domain_ShouldNotDependOn_Presentation()
+    public void Domain_ShouldNotDependOn_WebApi()
     {
         var result = Types
             .InAssembly(typeof(DomainAssembly).Assembly)
@@ -49,7 +54,9 @@ public sealed class ArchitectureTests
             .HaveDependencyOn(WebApiNamespace)
             .GetResult();
 
-        Assert.True(result.IsSuccessful, $"Domain types leak into Presentation/WebApi: {string.Join(", ", result.FailingTypes ?? [])}");
+        AssertArchitectureRule(
+            result,
+            "Domain must not depend on WebApi.");
     }
 
     [Fact]
@@ -61,11 +68,13 @@ public sealed class ArchitectureTests
             .HaveDependencyOn(InfrastructureNamespace)
             .GetResult();
 
-        Assert.True(result.IsSuccessful, $"Application layer depends on Infrastructure: {string.Join(", ", result.FailingTypes ?? [])}");
+        AssertArchitectureRule(
+            result,
+            "Application must not depend on Infrastructure.");
     }
 
     [Fact]
-    public void Application_ShouldNotDependOn_Presentation()
+    public void Application_ShouldNotDependOn_WebApi()
     {
         var result = Types
             .InAssembly(typeof(ApplicationAssembly).Assembly)
@@ -73,11 +82,13 @@ public sealed class ArchitectureTests
             .HaveDependencyOn(WebApiNamespace)
             .GetResult();
 
-        Assert.True(result.IsSuccessful, $"Application layer depends on Presentation/WebApi: {string.Join(", ", result.FailingTypes ?? [])}");
+        AssertArchitectureRule(
+            result,
+            "Application must not depend on WebApi.");
     }
 
     [Fact]
-    public void Infrastructure_ShouldNotDependOn_Presentation()
+    public void Infrastructure_ShouldNotDependOn_WebApi()
     {
         var result = Types
             .InAssembly(typeof(InfrastructureAssembly).Assembly)
@@ -85,6 +96,18 @@ public sealed class ArchitectureTests
             .HaveDependencyOn(WebApiNamespace)
             .GetResult();
 
-        Assert.True(result.IsSuccessful, $"Infrastructure layer depends on Presentation/WebApi: {string.Join(", ", result.FailingTypes ?? [])}");
+        AssertArchitectureRule(
+            result,
+            "Infrastructure must not depend on WebApi.");
+    }
+
+    private static void AssertArchitectureRule(
+        TestResult result,
+        string message)
+    {
+        Assert.True(
+            result.IsSuccessful,
+            $"{message} " +
+            $"Failing types: {string.Join(", ", result.FailingTypes ?? [])}");
     }
 }

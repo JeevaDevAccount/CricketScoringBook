@@ -13,7 +13,8 @@ public sealed class OverTests
         int totalRuns = 0,
         ExtraType extraType = ExtraType.None,
         Dismissal dismissal = null!,
-        int? dismissedPlayerId = null)
+        int? dismissedPlayerId = null,
+        int? IncomingBatterId = null)
     {
         return new Match.DeliveryInput(
             strikerId,
@@ -23,7 +24,8 @@ public sealed class OverTests
             totalRuns,
             extraType,
             dismissal,
-            dismissedPlayerId);
+            dismissedPlayerId,
+            IncomingBatterId);
     }
 
     [Fact]

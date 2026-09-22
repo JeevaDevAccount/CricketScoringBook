@@ -145,6 +145,15 @@ public sealed class Innings
         UpdateScore(delivery);
         RotateStrikeForRuns(delivery);
 
+        if (delivery.IsWicket && input.DismissedPlayerId.HasValue)
+        {
+            if (!input.IncomingBatterId.HasValue)
+            {
+                throw new InvalidOperationException("An incoming batsman ID must be provided when a dismissal occurs.");
+            }
+            ReplaceDismissedBatter(input.DismissedPlayerId.Value,input.IncomingBatterId.Value);
+        }
+
         if (CurrentOver.IsCompleted)
         {
             RotateStrikeAtEndOfOver();
@@ -362,9 +371,7 @@ public sealed class Innings
         };
     }
 
-    public void ReplaceDismissedBatter(
-        int dismissedPlayerId,
-        int incomingBatterId)
+    public void ReplaceDismissedBatter(int dismissedPlayerId,int incomingBatterId)
     {
         if (dismissedPlayerId <= 0)
             throw new ArgumentException("Invalid dismissed player.",nameof(dismissedPlayerId));

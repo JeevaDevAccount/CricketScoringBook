@@ -79,7 +79,8 @@ public sealed class Match
         int TotalRuns,
         ExtraType ExtraType,
         Dismissal Dismissal,
-        int? DismissedPlayerId);
+        int? DismissedPlayerId,
+        int? IncomingBatterId);
 
     // --------------------------------------------------
     // Scorer

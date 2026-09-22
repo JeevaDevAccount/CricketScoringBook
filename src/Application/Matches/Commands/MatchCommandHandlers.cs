@@ -1,6 +1,7 @@
 using Application.Abstractions.Interfaces;
 using Application.Matches.Commands.MatchCommands;
 using Domain.Aggregates.MatchAggregate;
+using Domain.Enum;
 
 namespace Application.Matches.Commands.MatchCommandHandlers;
 
@@ -177,7 +178,23 @@ public sealed class RecordDeliveryHandler
         
         if (match is null)
             throw new InvalidOperationException("Match not found.");
-        
+
+        Dismissal dismissal = Dismissal.Create(command.WicketType,command.FielderId);
+
+        if (command.WicketType != WicketType.None)
+        {
+            int? assignedFielderId = command.FielderId;
+
+            if (command.WicketType != WicketType.Caught && 
+                command.WicketType != WicketType.Stumped && 
+                command.WicketType != WicketType.RunOut)
+            {
+                assignedFielderId = command.BowlerId;
+            }
+
+            dismissal = Dismissal.Create(command.WicketType,assignedFielderId);
+        }
+
         var input = new Match.DeliveryInput(
         command.StrikerId,
         command.NonStrikerId,
@@ -185,8 +202,9 @@ public sealed class RecordDeliveryHandler
         command.BatterRuns,
         command.TotalRuns,
         command.ExtraType,
-        command.Dismissal,
-        command.DismissedPlayerId);
+        dismissal,
+        command.DismissedPlayerId,
+        command.IncomingBatterId);
 
         match.RecordDelivery(input);
 

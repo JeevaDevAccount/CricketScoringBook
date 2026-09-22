@@ -42,3 +42,7 @@ app.MapHub<MatchHub>("/hubs/match");
 app.MapMatchesEndpoints();
 
 app.Run();
+
+public partial class Program
+{
+}

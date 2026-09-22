@@ -18,9 +18,10 @@ public sealed record RecordDeliveryCommand(
     int BatterRuns,
     int TotalRuns,
     ExtraType ExtraType,
-    Dismissal Dismissal,
-    int? DismissedPlayerId
-);
+    WicketType WicketType,
+    int? FielderId,
+    int? DismissedPlayerId,
+    int? IncomingBatterId);
 
 public sealed record UndoDeliveryCommand(Guid MatchId);
 
