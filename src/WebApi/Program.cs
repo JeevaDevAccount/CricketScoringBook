@@ -1,8 +1,8 @@
 using Application.Abstractions.Interfaces;
 using Application.Matches.Commands.MatchCommandHandlers;
 using Infrastructure.DependencyInjection;
+using Infrastructure.Persistence.Repositories;
 using WebApi.Endpoints;
-using WebApi.Exceptions;
 using WebApi.Hubs;
 using WebApi.RealTime;
 
@@ -26,6 +26,7 @@ builder.Services.AddScoped<StartInningsHandler>();
 builder.Services.AddScoped<RecordDeliveryHandler>();
 builder.Services.AddScoped<UndoDeliveryHandler>();
 builder.Services.AddScoped<AddPlayerToPlayingTeamHandler>();
+builder.Services.AddScoped<CreatePlayerHandler>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

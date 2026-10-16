@@ -1,5 +1,6 @@
 using Application.Abstractions.Interfaces;
 using Infrastructure.Persistence;
+using Infrastructure.Persistence.Repositories;
 using Infrastructure.Queries;
 using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +22,8 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IMatchRepository, MatchRepository>();
         services.AddScoped<IUnitOfWork, AppUnitOfWork>();
         services.AddScoped<IMatchQueries, MatchQueries>();
+        services.AddScoped<IPlayerRepository,PlayerRepository>();
+        services.AddScoped<IPlayerQueries, PlayerQueries>();
 
         return services;
     }

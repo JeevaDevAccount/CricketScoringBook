@@ -13,8 +13,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260920102127_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260923134246_AddUniquePlayerName")]
+    partial class AddUniquePlayerName
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -274,6 +274,58 @@ namespace Infrastructure.Migrations
                     b.ToTable("Overs", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.Player", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsSubstitute")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int?>("TeamId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.HasIndex("TeamId");
+
+                    b.ToTable("Players", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.Team", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ShortName")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Teams", (string)null);
+                });
+
             modelBuilder.Entity("Domain.Aggregates.MatchAggregate.BattingScore", b =>
                 {
                     b.HasOne("Domain.Aggregates.MatchAggregate.Innings", null)
@@ -322,10 +374,18 @@ namespace Infrastructure.Migrations
 
                             b1.HasKey("MatchId");
 
+                            b1.HasIndex("TeamId");
+
                             b1.ToTable("MatchTeam1Details", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("MatchId");
+
+                            b1.HasOne("Domain.Entities.Team", null)
+                                .WithMany()
+                                .HasForeignKey("TeamId")
+                                .OnDelete(DeleteBehavior.Restrict)
+                                .IsRequired();
 
                             b1.OwnsMany("Domain.Aggregates.MatchAggregate.PlayingTeamPlayer", "Players", b2 =>
                                 {
@@ -333,17 +393,22 @@ namespace Infrastructure.Migrations
                                         .HasColumnType("uuid");
 
                                     b2.Property<int>("PlayerId")
-                                        .ValueGeneratedOnAdd()
                                         .HasColumnType("integer");
 
-                                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b2.Property<int>("PlayerId"));
-
                                     b2.HasKey("MatchId", "PlayerId");
+
+                                    b2.HasIndex("PlayerId");
 
                                     b2.ToTable("MatchTeam1Players", (string)null);
 
                                     b2.WithOwner()
                                         .HasForeignKey("MatchId");
+
+                                    b2.HasOne("Domain.Entities.Player", null)
+                                        .WithMany()
+                                        .HasForeignKey("PlayerId")
+                                        .OnDelete(DeleteBehavior.Restrict)
+                                        .IsRequired();
                                 });
 
                             b1.Navigation("Players");
@@ -359,10 +424,18 @@ namespace Infrastructure.Migrations
 
                             b1.HasKey("MatchId");
 
+                            b1.HasIndex("TeamId");
+
                             b1.ToTable("MatchTeam2Details", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("MatchId");
+
+                            b1.HasOne("Domain.Entities.Team", null)
+                                .WithMany()
+                                .HasForeignKey("TeamId")
+                                .OnDelete(DeleteBehavior.Restrict)
+                                .IsRequired();
 
                             b1.OwnsMany("Domain.Aggregates.MatchAggregate.PlayingTeamPlayer", "Players", b2 =>
                                 {
@@ -370,17 +443,22 @@ namespace Infrastructure.Migrations
                                         .HasColumnType("uuid");
 
                                     b2.Property<int>("PlayerId")
-                                        .ValueGeneratedOnAdd()
                                         .HasColumnType("integer");
 
-                                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b2.Property<int>("PlayerId"));
-
                                     b2.HasKey("MatchId", "PlayerId");
+
+                                    b2.HasIndex("PlayerId");
 
                                     b2.ToTable("MatchTeam2Players", (string)null);
 
                                     b2.WithOwner()
                                         .HasForeignKey("MatchId");
+
+                                    b2.HasOne("Domain.Entities.Player", null)
+                                        .WithMany()
+                                        .HasForeignKey("PlayerId")
+                                        .OnDelete(DeleteBehavior.Restrict)
+                                        .IsRequired();
                                 });
 
                             b1.Navigation("Players");
@@ -400,6 +478,14 @@ namespace Infrastructure.Migrations
                         .HasForeignKey("InningsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Domain.Entities.Player", b =>
+                {
+                    b.HasOne("Domain.Entities.Team", null)
+                        .WithMany()
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("Domain.Aggregates.MatchAggregate.Innings", b =>

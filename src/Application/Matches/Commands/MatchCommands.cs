@@ -26,3 +26,4 @@ public sealed record RecordDeliveryCommand(
 public sealed record UndoDeliveryCommand(Guid MatchId);
 
 public sealed record AddPlayerToPlayingTeamCommand(Guid MatchId, int TeamId, int PlayerId);
+public sealed record CreatePlayerCommand(string Name, bool IsSubstitute);

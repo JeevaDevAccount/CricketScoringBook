@@ -35,6 +35,20 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Teams",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    ShortName = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Teams", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Innings",
                 columns: table => new
                 {
@@ -82,6 +96,12 @@ namespace Infrastructure.Migrations
                         principalTable: "Matches",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_MatchTeam1Details_Teams_TeamId",
+                        column: x => x.TeamId,
+                        principalTable: "Teams",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -100,6 +120,33 @@ namespace Infrastructure.Migrations
                         principalTable: "Matches",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_MatchTeam2Details_Teams_TeamId",
+                        column: x => x.TeamId,
+                        principalTable: "Teams",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Players",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    TeamId = table.Column<int>(type: "integer", nullable: true),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    IsSubstitute = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Players", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Players_Teams_TeamId",
+                        column: x => x.TeamId,
+                        principalTable: "Teams",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
@@ -173,8 +220,7 @@ namespace Infrastructure.Migrations
                 name: "MatchTeam1Players",
                 columns: table => new
                 {
-                    PlayerId = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    PlayerId = table.Column<int>(type: "integer", nullable: false),
                     MatchId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
@@ -186,14 +232,19 @@ namespace Infrastructure.Migrations
                         principalTable: "MatchTeam1Details",
                         principalColumn: "MatchId",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_MatchTeam1Players_Players_PlayerId",
+                        column: x => x.PlayerId,
+                        principalTable: "Players",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
                 name: "MatchTeam2Players",
                 columns: table => new
                 {
-                    PlayerId = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    PlayerId = table.Column<int>(type: "integer", nullable: false),
                     MatchId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
@@ -205,6 +256,12 @@ namespace Infrastructure.Migrations
                         principalTable: "MatchTeam2Details",
                         principalColumn: "MatchId",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_MatchTeam2Players_Players_PlayerId",
+                        column: x => x.PlayerId,
+                        principalTable: "Players",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -259,10 +316,35 @@ namespace Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_MatchTeam1Details_TeamId",
+                table: "MatchTeam1Details",
+                column: "TeamId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MatchTeam1Players_PlayerId",
+                table: "MatchTeam1Players",
+                column: "PlayerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MatchTeam2Details_TeamId",
+                table: "MatchTeam2Details",
+                column: "TeamId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MatchTeam2Players_PlayerId",
+                table: "MatchTeam2Players",
+                column: "PlayerId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Overs_InningsId_OverNumber",
                 table: "Overs",
                 columns: new[] { "InningsId", "OverNumber" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Players_TeamId",
+                table: "Players",
+                column: "TeamId");
         }
 
         /// <inheritdoc />
@@ -293,7 +375,13 @@ namespace Infrastructure.Migrations
                 name: "MatchTeam2Details");
 
             migrationBuilder.DropTable(
+                name: "Players");
+
+            migrationBuilder.DropTable(
                 name: "Innings");
+
+            migrationBuilder.DropTable(
+                name: "Teams");
 
             migrationBuilder.DropTable(
                 name: "Matches");

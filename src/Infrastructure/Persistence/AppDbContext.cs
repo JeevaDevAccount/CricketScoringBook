@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Domain.Aggregates.MatchAggregate;
+using Domain.Entities;
 
 namespace Infrastructure.Persistence;
 
@@ -11,6 +12,8 @@ public sealed class AppDbContext : DbContext
     }
 
     public DbSet<Match> Matches => Set<Match>();
+    public DbSet<Team> Teams => Set<Team>();
+    public DbSet<Player> Players => Set<Player>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

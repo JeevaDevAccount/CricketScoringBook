@@ -10,19 +10,77 @@ public static class MatchesEndpoints
 {
     public static void MapMatchesEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/matches").WithTags("Cricket Matches");
+        // ============================================================
+        // PLAYER ENDPOINTS
+        // ============================================================
 
-        // 0. Create Match -> Initializes a brand new match row in the database
-        group.MapPost("", async (
-            [FromBody] CreateMatchCommand command,
-            CreateMatchHandler handler,
-            CancellationToken cancellationToken) =>
-        {
-            Guid matchId = await handler.Handle(command, cancellationToken);
-            return Results.CreatedAtRoute("GetLiveMatch", new { matchId = matchId }, new { Id = matchId });
-        });
+        var playerGroup = app
+            .MapGroup("/api/players")
+            .WithTags("Players");
 
-        // 1. Start match (No Body needed, instantiates using purely the URL Guid)
+        // Create a new master player
+        playerGroup.MapPost(
+            "",
+            async (
+                [FromBody] CreatePlayerCommand command,
+                [FromServices] CreatePlayerHandler handler,
+                CancellationToken cancellationToken) =>
+            {
+                var playerId = await handler.Handle(
+                    command,
+                    cancellationToken);
+
+                return Results.Created(
+                    $"/api/players/{playerId}",
+                    new { Id = playerId });
+            });
+
+        // ============================================================
+        // Search existing players
+        // ============================================================
+
+        playerGroup.MapGet(
+            "/search",
+            async (
+                string name,
+                [FromServices] IPlayerQueries queries,
+                CancellationToken cancellationToken) =>
+            {
+                var players = await queries.SearchPlayersAsync(
+                    name,
+                    cancellationToken);
+
+                return Results.Ok(players);
+            }
+        );
+
+        // ============================================================
+        // MATCH ENDPOINTS
+        // ============================================================
+
+        var group = app
+            .MapGroup("/api/matches")
+            .WithTags("Cricket Matches");
+
+        // 0. Create Match
+        group.MapPost(
+            "",
+            async (
+                [FromBody] CreateMatchCommand command,
+                CreateMatchHandler handler,
+                CancellationToken cancellationToken) =>
+            {
+                Guid matchId = await handler.Handle(
+                    command,
+                    cancellationToken);
+
+                return Results.CreatedAtRoute(
+                    "GetLiveMatch",
+                    new { matchId },
+                    new { Id = matchId });
+            });
+
+        // 1. Start match
         group.MapPost(
             "/{matchId:guid}/start",
             async (
@@ -37,7 +95,7 @@ public static class MatchesEndpoints
                 return Results.NoContent();
             });
 
-        // 2. Claim scorer (Clean route extraction)
+        // 2. Claim scorer
         group.MapPost(
             "/{matchId:guid}/scorer/claim",
             async (
@@ -47,7 +105,9 @@ public static class MatchesEndpoints
                 CancellationToken cancellationToken) =>
             {
                 await handler.Handle(
-                    new ClaimScorerCommand(matchId, body.ScorerId),
+                    new ClaimScorerCommand(
+                        matchId,
+                        body.ScorerId),
                     cancellationToken);
 
                 return Results.NoContent();
@@ -63,7 +123,9 @@ public static class MatchesEndpoints
                 CancellationToken cancellationToken) =>
             {
                 await handler.Handle(
-                    new ChangeScorerCommand(matchId, body.ScorerId),
+                    new ChangeScorerCommand(
+                        matchId,
+                        body.ScorerId),
                     cancellationToken);
 
                 return Results.NoContent();
@@ -71,23 +133,24 @@ public static class MatchesEndpoints
 
         // 4. Record toss
         group.MapPost(
-        "/{matchId:guid}/toss",
-        async (
-            Guid matchId,
-            [FromBody] RecordTossBody body, 
-            RecordTossHandler handler,
-            CancellationToken cancellationToken) =>
-        {
-            var command = new RecordTossCommand(
-                matchId,
-                body.TossWonTeamId,
-                body.Decision ?? InningsDecision.Bat 
-            );
+            "/{matchId:guid}/toss",
+            async (
+                Guid matchId,
+                [FromBody] RecordTossBody body,
+                RecordTossHandler handler,
+                CancellationToken cancellationToken) =>
+            {
+                var command = new RecordTossCommand(
+                    matchId,
+                    body.TossWonTeamId,
+                    body.Decision ?? InningsDecision.Bat);
 
-            await handler.Handle(command, cancellationToken);
+                await handler.Handle(
+                    command,
+                    cancellationToken);
 
-            return Results.NoContent();
-        });
+                return Results.NoContent();
+            });
 
         // 5. Start innings
         group.MapPost(
@@ -102,10 +165,12 @@ public static class MatchesEndpoints
                     matchId,
                     body.StrikerId,
                     body.NonStrikerId,
-                    body.BowlerId
-                );
+                    body.BowlerId);
 
-                await handler.Handle(command, cancellationToken);
+                await handler.Handle(
+                    command,
+                    cancellationToken);
+
                 return Results.NoContent();
             });
 
@@ -129,10 +194,12 @@ public static class MatchesEndpoints
                     body.WicketType,
                     body.FielderId,
                     body.DismissedPlayerId,
-                    body.IncomingBatterId
-                );
+                    body.IncomingBatterId);
 
-                await handler.Handle(command, cancellationToken);
+                await handler.Handle(
+                    command,
+                    cancellationToken);
+
                 return Results.NoContent();
             });
 
@@ -151,7 +218,7 @@ public static class MatchesEndpoints
                 return Results.NoContent();
             });
 
-        // 8. Add player to playing XI
+        // 8. Add existing player to playing XI
         group.MapPost(
             "/{matchId:guid}/teams/{teamId:int}/players",
             async (
@@ -226,19 +293,24 @@ public static class MatchesEndpoints
 }
 
 public sealed record ClaimScorerBody(int ScorerId);
+
 public sealed record ChangeScorerBody(int ScorerId);
+
 public sealed class RecordTossBody
 {
     public int TossWonTeamId { get; set; }
-    public InningsDecision? Decision { get; set; } 
+    public InningsDecision? Decision { get; set; }
 }
+
 public sealed record AddPlayerBody(int PlayerId);
+
 public sealed class StartInningsBody
 {
     public int StrikerId { get; set; }
     public int NonStrikerId { get; set; }
     public int BowlerId { get; set; }
 }
+
 public sealed class RecordDeliveryBody
 {
     public int StrikerId { get; set; }
@@ -247,8 +319,8 @@ public sealed class RecordDeliveryBody
     public int BatterRuns { get; set; }
     public int TotalRuns { get; set; }
     public ExtraType ExtraType { get; set; }
-    public WicketType WicketType { get; set; } 
+    public WicketType WicketType { get; set; }
     public int? FielderId { get; set; }
     public int? DismissedPlayerId { get; set; }
-    public int? IncomingBatterId { get; set; } 
+    public int? IncomingBatterId { get; set; }
 }

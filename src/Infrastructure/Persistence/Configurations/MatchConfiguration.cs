@@ -1,4 +1,5 @@
 using Domain.Aggregates.MatchAggregate;
+using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -32,12 +33,23 @@ public sealed class MatchConfiguration : IEntityTypeConfiguration<Match>
 
             team1.Property(x => x.TeamId).IsRequired();
 
+            team1.HasOne<Team>()
+            .WithMany()
+            .HasForeignKey(x => x.TeamId)
+            .OnDelete(DeleteBehavior.Restrict);
+            
             team1.OwnsMany(x => x.Players, player =>
             {
                 player.ToTable("MatchTeam1Players"); // 👈 Distinct table name
                 player.WithOwner().HasForeignKey("MatchId");
                 player.HasKey("MatchId", "PlayerId");
-                player.Property(x => x.PlayerId).IsRequired();
+
+                player.Property(x => x.PlayerId).IsRequired().ValueGeneratedNever();;
+
+                player.HasOne<Player>()
+                .WithMany()
+                .HasForeignKey(x => x.PlayerId)
+                .OnDelete(DeleteBehavior.Restrict);
             });
 
             team1.Navigation(x => x.Players)
@@ -57,12 +69,23 @@ public sealed class MatchConfiguration : IEntityTypeConfiguration<Match>
 
             team2.Property(x => x.TeamId).IsRequired();
 
+            team2.HasOne<Team>()
+            .WithMany()
+            .HasForeignKey(x => x.TeamId)
+            .OnDelete(DeleteBehavior.Restrict);
+            
             team2.OwnsMany(x => x.Players, player =>
             {
                 player.ToTable("MatchTeam2Players");
                 player.WithOwner().HasForeignKey("MatchId");
                 player.HasKey("MatchId", "PlayerId");
-                player.Property(x => x.PlayerId).IsRequired();
+                
+                player.Property(x => x.PlayerId).IsRequired().ValueGeneratedNever();;
+
+                player.HasOne<Player>()
+                .WithMany()
+                .HasForeignKey(x => x.PlayerId)
+                .OnDelete(DeleteBehavior.Restrict);
             });
 
             team2.Navigation(x => x.Players)

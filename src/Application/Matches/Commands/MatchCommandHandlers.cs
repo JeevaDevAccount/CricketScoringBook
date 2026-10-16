@@ -1,6 +1,7 @@
 using Application.Abstractions.Interfaces;
 using Application.Matches.Commands.MatchCommands;
 using Domain.Aggregates.MatchAggregate;
+using Domain.Entities;
 using Domain.Enum;
 
 namespace Application.Matches.Commands.MatchCommandHandlers;
@@ -240,22 +241,61 @@ public sealed class UndoDeliveryHandler
 public sealed class AddPlayerToPlayingTeamHandler{
 
     private readonly IMatchRepository _matchRepository;
+    private readonly IPlayerRepository _playerRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMatchUpdateNotifier _matchUpdateNotifier;
 
-    public AddPlayerToPlayingTeamHandler(IMatchRepository matchRepository, IUnitOfWork unitOfWork, IMatchUpdateNotifier matchUpdateNotifier){
+    public AddPlayerToPlayingTeamHandler(IMatchRepository matchRepository, IUnitOfWork unitOfWork, IMatchUpdateNotifier matchUpdateNotifier, IPlayerRepository playerRepository){
         _matchRepository = matchRepository;
         _unitOfWork = unitOfWork;
         _matchUpdateNotifier = matchUpdateNotifier;
+        _playerRepository = playerRepository;
     }
     public async Task Handle(AddPlayerToPlayingTeamCommand command, CancellationToken cancellationToken){
+        
         var match = await _matchRepository.GetByIdAsync(command.MatchId,cancellationToken);
         
         if (match is null)
             throw new InvalidOperationException("Match not found.");
         
+        var player = await _playerRepository.GetByIdAsync(
+            command.PlayerId,
+            cancellationToken);
+
+        if (player is null)
+            throw new InvalidOperationException("Player not found.");
+            
         match.AddPlayerToPlayingTeam(command.TeamId,command.PlayerId);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         await _matchUpdateNotifier.NotifyMatchUpdatedAsync(command.MatchId, cancellationToken);
+    }
+}
+
+public sealed class CreatePlayerHandler
+{
+    private readonly IPlayerRepository _playerRepository;
+    private readonly IUnitOfWork _unitOfWork;
+
+    public CreatePlayerHandler(
+        IPlayerRepository playerRepository,
+        IUnitOfWork unitOfWork)
+    {
+        _playerRepository = playerRepository;
+        _unitOfWork = unitOfWork;
+    }
+
+    public async Task<int> Handle(
+        CreatePlayerCommand command,
+        CancellationToken cancellationToken)
+    {
+        var player = Player.Create(
+            command.Name,
+            command.IsSubstitute);
+
+        _playerRepository.Add(player);
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return player.Id;
     }
 }

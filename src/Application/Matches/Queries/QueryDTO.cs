@@ -6,7 +6,9 @@ namespace Application.Matches.Queries;
 public sealed record MatchDto(
     Guid MatchId,
     int Team1Id,
+    string Team1Name,
     int Team2Id,
+    string Team2Name,
     MatchStatus Status,
     int? TeamBattingFirstId,
     int? TeamBattingSecondId
@@ -16,14 +18,19 @@ public sealed record LiveMatchDto(
     Guid MatchId,
     MatchStatus Status,
     int BattingTeamId,
+    string BattingTeamName,
     int BowlingTeamId,
+    string BowlingTeamName,
     int TotalRuns,
     int? TargetRuns,
     int Wickets,
     int TotalBalls,
     int StrikerId,
+    string StrikerName,
     int NonStrikerId,
+    string NonStrikerName,
     int BowlerId,
+    string BowlerName,
     int CurrentOverNumber
 );
 
@@ -35,7 +42,9 @@ public sealed record ScorecardDto(
 public sealed record InningsScorecardDto(
     int InningsNumber,
     int BattingTeamId,
+    string BattingTeamName,
     int BowlingTeamId,
+    string BowlingTeamName,
     int TotalRuns,
     int Wickets,
     int TotalBalls,
@@ -45,6 +54,7 @@ public sealed record InningsScorecardDto(
 
 public sealed record BattingScoreDto(
     int PlayerId,
+    string PlayerName,
     int Runs,
     int Balls,
     int Fours,
@@ -55,9 +65,15 @@ public sealed record BattingScoreDto(
 
 public sealed record BowlingScoreDto(
     int PlayerId,
+    string PlayerName,
     int RunsConceded,
     int Balls,
     int Maidens,
     int TotalWickets,
     decimal Economy
+);
+
+public sealed record PlayerLookupDto(
+    int PlayerId,
+    string Name
 );
