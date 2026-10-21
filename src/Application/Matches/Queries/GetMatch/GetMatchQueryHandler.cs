@@ -10,7 +10,7 @@ public sealed class GetMatchQueryHandler{
     }
 
     public async Task<MatchDto?> Handle(
-       GetMatchQuery query,
+        GetMatchQuery query,
         CancellationToken cancellationToken
     ){
          return await _matchQueries.GetMatchAsync(

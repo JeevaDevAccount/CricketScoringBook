@@ -8,6 +8,16 @@ using WebApi.RealTime;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173", "http://127.0.0.1:5173") // React app's local URL
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 //builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 //builder.Services.AddProblemDetails();
 
@@ -33,6 +43,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+app.UseCors("AllowReactApp");
 //app.UseExceptionHandler();
 
 app.UseSwagger();

@@ -16,4 +16,5 @@ public interface IMatchQueries
     Task<LiveMatchDto?> GetLiveMatchAsync(Guid matchId,CancellationToken cancellationToken);
 
     Task<ScorecardDto?> GetScorecardAsync(Guid matchId,CancellationToken cancellationToken);
+    Task<IEnumerable<MatchDto?>> GetAllMatchesAsync(CancellationToken cancellationToken);
 }

@@ -15,6 +15,32 @@ public sealed class MatchQueries : IMatchQueries
         _context = context;
     }
 
+    public async Task<IEnumerable<MatchDto?>> GetAllMatchesAsync(
+        CancellationToken cancellationToken)
+    {
+        return await _context.Matches
+            .AsNoTracking()
+            .Select(x => new MatchDto(
+                x.Id,
+
+                x.Team1PlayingTeam.TeamId,
+                _context.Set<Team>()
+                    .Where(t => t.Id == x.Team1PlayingTeam.TeamId)
+                    .Select(t => t.Name)
+                    .First(),
+
+                x.Team2PlayingTeam.TeamId,
+                _context.Set<Team>()
+                    .Where(t => t.Id == x.Team2PlayingTeam.TeamId)
+                    .Select(t => t.Name)
+                    .First(),
+
+                x.Status,
+                x.TeamBattingFirstId,
+                x.TeamBattingSecondId))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<MatchDto?> GetMatchAsync(
         Guid matchId,
         CancellationToken cancellationToken)

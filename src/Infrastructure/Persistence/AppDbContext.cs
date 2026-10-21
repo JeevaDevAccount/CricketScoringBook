@@ -24,3 +24,4 @@ public sealed class AppDbContext : DbContext
 
 //docker ps
 //docker start cricket-postgres
+//running on ort 5432

@@ -64,7 +64,7 @@ public static class MatchesEndpoints
 
         // 0. Create Match
         group.MapPost(
-            "",
+            "/",
             async (
                 [FromBody] CreateMatchCommand command,
                 CreateMatchHandler handler,
@@ -288,6 +288,17 @@ public static class MatchesEndpoints
                 return result is null
                     ? Results.NotFound()
                     : Results.Ok(result);
+            });
+        
+        // 12. Get all matches (For Match List Page)
+        group.MapGet(
+            "/getAllMatches",
+            async (
+                IMatchQueries queries,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await queries.GetAllMatchesAsync(cancellationToken);
+                return Results.Ok(result);
             });
     }
 }
